@@ -31,11 +31,6 @@ export function attachPointerInteraction({ canvas, viewport, draw }) {
     return range.x.min + (range.x.max - range.x.min) * ratio;
   }
 
-  function pricePerPixel(height, range) {
-    const plotHeight = Math.max(1, height - 18 - 24);
-    return (range.y.max - range.y.min) / plotHeight;
-  }
-
   function onPointerDown(event) {
     const r = rect();
     const point = pointFromEvent(event, r);
@@ -65,7 +60,7 @@ export function attachPointerInteraction({ canvas, viewport, draw }) {
       const [a, b] = [...pointers.values()];
       const nextDistance = Math.max(1, distance(a, b));
       const previousDistance = state.pinchDistance || nextDistance;
-      const factor = previousDistance / nextDistance;
+      const factor = Math.pow(previousDistance / nextDistance, 0.5);
       const midpointX = (a.x + b.x) / 2;
       const current = viewport.getState();
       viewport.zoomX(factor, timeAtX(midpointX, r.width, current));
@@ -89,15 +84,15 @@ export function attachPointerInteraction({ canvas, viewport, draw }) {
       const plotTop = 18;
       const plotHeight = Math.max(1, r.height - 18 - 24);
       const ratio = Math.max(0, Math.min(1, (point.y - plotTop) / plotHeight));
-      const anchor = current.y.max - ratio * (current.y.max - current.y.min);
+      const anchor = viewport.priceAtYRatio(ratio);
       viewport.zoomY(factor, anchor);
     } else if (state.mode === 'pan-x') {
       const current = viewport.getState();
       const plotWidth = Math.max(1, r.width - 68 - 10);
       viewport.panX(-(dx / plotWidth) * (current.x.max - current.x.min));
     } else if (state.mode === 'pan-y') {
-      const current = viewport.getState();
-      viewport.panY(dy * pricePerPixel(r.height, current));
+      const plotHeight = Math.max(1, r.height - 18 - 24);
+      viewport.panYByPixels(dy, plotHeight);
     } else {
       if (Math.abs(dx) >= 6 || Math.abs(dy) >= 6) {
         state.mode = Math.abs(dx) >= Math.abs(dy) ? 'pan-x' : 'pan-y';
@@ -107,8 +102,8 @@ export function attachPointerInteraction({ canvas, viewport, draw }) {
         const plotWidth = Math.max(1, r.width - 68 - 10);
         viewport.panX(-(dx / plotWidth) * (current.x.max - current.x.min));
       } else if (state.mode === 'pan-y') {
-        const current = viewport.getState();
-        viewport.panY(dy * pricePerPixel(r.height, current));
+        const plotHeight = Math.max(1, r.height - 18 - 24);
+        viewport.panYByPixels(dy, plotHeight);
       }
     }
 
