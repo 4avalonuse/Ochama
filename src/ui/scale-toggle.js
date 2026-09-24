@@ -1,4 +1,4 @@
-export function attachScaleToggle({ button, viewport, draw }) {
+export function attachScaleToggle({ button, viewport, draw, onScaleChanged = null }) {
   function sync() {
     const log = viewport.getYScaleType() === 'logarithmic';
     button.textContent = log ? 'LOG' : 'NORMAL';
@@ -8,10 +8,11 @@ export function attachScaleToggle({ button, viewport, draw }) {
 
   button.addEventListener('click', () => {
     const next = viewport.getYScaleType() === 'logarithmic' ? 'linear' : 'logarithmic';
-    if (viewport.setYScaleType(next)) {
-      sync();
-      draw();
-    }
+    if (!viewport.setYScaleType(next)) return;
+
+    if (typeof onScaleChanged === 'function') onScaleChanged();
+    sync();
+    draw();
   });
 
   sync();
