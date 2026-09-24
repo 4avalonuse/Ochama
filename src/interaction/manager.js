@@ -2,6 +2,8 @@
 // Reconhece o gesto; matemática permanece no viewport.
 // Modos: auto | navigation | drawing | selection | none.
 
+import { PLOT_GEOMETRY } from '../chart/plot-geometry.js';
+
 export class InteractionManager {
   constructor({ canvas, viewport, draw, handlers = {} }) {
     this.canvas = canvas;
@@ -12,7 +14,7 @@ export class InteractionManager {
     this.owner = null;
     this.mode = 'auto';
     this.gesture = { type: null, last: null, pinchDistance: null };
-    this.plot = { left: 10, right: 68, top: 18, bottom: 24 };
+    this.plot = PLOT_GEOMETRY;
     this.bound = false;
   }
 
@@ -134,7 +136,7 @@ export class InteractionManager {
       const anchor = this.viewport.priceAtYRatio(ratio);
       // Mesma sensação do gesto vertical histórico, mas o viewport
       // decide como isso se comporta em linear ou log.
-      this.viewport.zoomY(Math.exp(dy*0.01), anchor);
+      this.viewport.zoomY(Math.exp(-dy / 220), anchor);
     } else if (!this.gesture.type && (Math.abs(dx)>=6 || Math.abs(dy)>=6)) {
       this.gesture.type = Math.abs(dx)>=Math.abs(dy) ? 'pan-x' : 'pan-y';
     }
