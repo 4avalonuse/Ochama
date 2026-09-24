@@ -35,5 +35,5 @@ bootstrap().catch(error => {
   console.error('[Ochama]', error);
   document.querySelector('#chart').classList.remove('is-loading');
   document.querySelector('#chart').classList.add('is-error');
-  document.querySelector('#status').textContent = 'Erro ao carregar dados';
+  document.querySelector('#status').textContent = `Erro: ${error?.message || 'falha desconhecida'}`;
 });
