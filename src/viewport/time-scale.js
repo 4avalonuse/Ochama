@@ -20,3 +20,12 @@ export function zoomTime(range, factor, anchor, bounds) {
   };
   return panTime(next, 0, bounds);
 }
+
+export function fitTime(target, bounds) {
+  const min = Number(target?.min), max = Number(target?.max);
+  const bMin = Number(bounds?.min), bMax = Number(bounds?.max);
+  if (![min, max, bMin, bMax].every(Number.isFinite) || max <= min) return { min: bMin, max: bMax };
+  const span = Math.min(max - min, bMax - bMin);
+  const center = Math.max(bMin + span / 2, Math.min(bMax - span / 2, (min + max) / 2));
+  return { min: center - span / 2, max: center + span / 2 };
+}
