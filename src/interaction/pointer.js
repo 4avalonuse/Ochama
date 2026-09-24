@@ -86,8 +86,10 @@ export function attachPointerInteraction({ canvas, viewport, draw }) {
     if (state.mode === 'price-scale') {
       const current = viewport.getState();
       const factor = Math.exp(dy * 0.01);
-      const anchor = current.y.min + (1 - point.y / Math.max(1, r.height)) *
-        (current.y.max - current.y.min);
+      const plotTop = 18;
+      const plotHeight = Math.max(1, r.height - 18 - 24);
+      const ratio = Math.max(0, Math.min(1, (point.y - plotTop) / plotHeight));
+      const anchor = current.y.max - ratio * (current.y.max - current.y.min);
       viewport.zoomY(factor, anchor);
     } else if (state.mode === 'pan-x') {
       const current = viewport.getState();
