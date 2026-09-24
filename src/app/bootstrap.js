@@ -33,7 +33,11 @@ export async function bootstrap() {
   viewport.fitY({ min: Math.min(...visible.map(c => c.low)), max: Math.max(...visible.map(c => c.high)) });
 
   const chart = createChart(chartHost, candles, viewport);
-  attachPointerInteraction({ canvas: chart.canvas, viewport, draw: chart.draw });
+  const interaction = attachPointerInteraction({ canvas: chart.canvas, viewport, draw: chart.draw });
+  // Navegação é o modo padrão; desenhos/seleção poderão assumir o dono
+  // do gesto sem criar listeners concorrentes.
+  interaction.setMode('navigation');
+  window.ochama = { viewport, interaction, chart };
   const fitVisiblePrice = () => {
     const state = viewport.getState();
     const shown = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
