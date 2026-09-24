@@ -2,6 +2,7 @@ import { createDataClient } from '../data/client.js';
 import { normalizeCandles } from '../data/normalize.js';
 import { createViewport } from '../viewport/viewport.js';
 import { createChart } from '../chart/render.js';
+import { attachPointerInteraction } from '../interaction/pointer.js';
 
 const API_BASE = 'https://oraculum-data-api.4avalonuse.workers.dev';
 
@@ -26,7 +27,8 @@ export async function bootstrap() {
     }
   });
 
-  createChart(chartHost, candles, viewport);
+  const chart = createChart(chartHost, candles, viewport);
+  attachPointerInteraction({ canvas: chart.canvas, viewport, draw: chart.draw });
   chartHost.classList.remove('is-loading', 'is-error');
   status.textContent = `BTC-USD · ${candles.length} candles`;
 }
