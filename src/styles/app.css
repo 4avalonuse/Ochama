@@ -1,0 +1,22 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #1f2937;
+  background: #f5f5f5;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { min-height: 100vh; }
+.app-header {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+}
+.chart-shell {
+  height: calc(100vh - 48px);
+  min-height: 320px;
+  background: white;
+}
