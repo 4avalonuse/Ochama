@@ -1,4 +1,5 @@
 import { normalizeScaleType, toScaleValue, fromScaleValue } from '../viewport/scale.js';
+import { createPlotGeometry } from './plot-geometry.js';
 
 function finite(value) {
   return Number.isFinite(value);
@@ -126,16 +127,7 @@ export function createChart(host, candles, viewport) {
     if (!candles.length || !finite(state.y.min) || !finite(state.y.max) || state.y.max <= state.y.min) return;
     if (state.yScaleType === 'logarithmic' && state.y.min <= 0) return;
 
-    const rightAxis = 68;
-    const top = 18;
-    const bottom = 24;
-    const left = 10;
-    const plot = {
-      left,
-      top,
-      width: Math.max(1, width - left - rightAxis),
-      height: Math.max(1, height - top - bottom)
-    };
+    const plot = createPlotGeometry(width, height);
 
     drawGrid(ctx, width, height, plot, state.y.min, state.y.max, normalizeScaleType(state.yScaleType));
     drawCandles(ctx, candles, state, plot);
