@@ -38,7 +38,7 @@ export function createViewport() {
       range = { x: { min: Number(next.x.min), max: Number(next.x.max) }, y: { min: Number(next.y.min), max: Number(next.y.max) } };
       if (next.yScaleType) this.setYScaleType(next.yScaleType);
     },
-    getYScaleType() { return yScaleType; },
+    getYScaleType() { return yViewport.type; },
     setYScaleType(type) {
       const next = normalizeScaleType(type), b = bounds.get();
       if (next === 'logarithmic' && (b.y.min <= 0 || b.y.max <= 0)) return false;
@@ -51,7 +51,7 @@ export function createViewport() {
     panYByPixels(pixels, plotHeight) { range.y = yViewport.panPixels(range.y, pixels, plotHeight); range.y = clampY(range.y, bounds.get().y, yViewport); },
     zoomY(factor, anchor) { range.y = yViewport.zoom(range.y, factor, anchor); range.y = clampY(range.y, bounds.get().y, yViewport); },
     fitX(target) { range.x = fitTime(target, bounds.get().x); },
-    fitY(target) { range.y = fitPrice(target, bounds.get().y, yScaleType); },
+    fitY(target) { range.y = yViewport.fit(target); range.y = clampY(range.y, bounds.get().y, yViewport); },
     fitAll() { const b = bounds.get(); range = { x: { ...b.x }, y: { ...b.y } }; },
     priceAtYRatio(ratio) { return yViewport.valueAtRatio(range.y, ratio); }
   };
