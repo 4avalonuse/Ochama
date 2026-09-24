@@ -12,6 +12,7 @@ export async function bootstrap() {
   const dataClient = createDataClient(API_BASE);
   const viewport = createViewport();
 
+  chartHost.classList.add('is-loading');
   status.textContent = 'Carregando dados…';
 
   const raw = await dataClient.loadCandles({ provider: 'yahoo', symbol: 'BTC-USD', interval: '1d' });
@@ -26,10 +27,13 @@ export async function bootstrap() {
   });
 
   createChart(chartHost, candles, viewport);
+  chartHost.classList.remove('is-loading', 'is-error');
   status.textContent = `BTC-USD · ${candles.length} candles`;
 }
 
 bootstrap().catch(error => {
   console.error('[Ochama]', error);
+  document.querySelector('#chart').classList.remove('is-loading');
+  document.querySelector('#chart').classList.add('is-error');
   document.querySelector('#status').textContent = 'Erro ao carregar dados';
 });
