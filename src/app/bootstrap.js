@@ -34,7 +34,21 @@ export async function bootstrap() {
 
   const chart = createChart(chartHost, candles, viewport);
   attachPointerInteraction({ canvas: chart.canvas, viewport, draw: chart.draw });
-  attachScaleToggle({ button: scaleButton, viewport, draw: chart.draw });
+  const fitVisiblePrice = () => {
+    const state = viewport.getState();
+    const shown = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
+    if (!shown.length) return;
+    viewport.fitY({
+      min: Math.min(...shown.map(c => c.low)),
+      max: Math.max(...shown.map(c => c.high))
+    });
+  };
+  attachScaleToggle({
+    button: scaleButton,
+    viewport,
+    draw: chart.draw,
+    onScaleChanged: fitVisiblePrice
+  });
   attachFitToggle({ button: fitButton, viewport, candles, draw: chart.draw });
 
   chartHost.classList.remove('is-loading', 'is-error');
