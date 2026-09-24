@@ -3,12 +3,14 @@ import { normalizeCandles } from '../data/normalize.js';
 import { createViewport } from '../viewport/viewport.js';
 import { createChart } from '../chart/render.js';
 import { attachPointerInteraction } from '../interaction/pointer.js';
+import { attachScaleToggle } from '../ui/scale-toggle.js';
 
 const API_BASE = 'https://oraculum-data-api.4avalonuse.workers.dev';
 
 export async function bootstrap() {
   const status = document.querySelector('#status');
   const chartHost = document.querySelector('#chart');
+  const scaleButton = document.querySelector('#scale-toggle');
 
   const dataClient = createDataClient(API_BASE);
   const viewport = createViewport();
@@ -29,6 +31,8 @@ export async function bootstrap() {
 
   const chart = createChart(chartHost, candles, viewport);
   attachPointerInteraction({ canvas: chart.canvas, viewport, draw: chart.draw });
+  attachScaleToggle({ button: scaleButton, viewport, draw: chart.draw });
+
   chartHost.classList.remove('is-loading', 'is-error');
   status.textContent = `BTC-USD · ${candles.length} candles`;
 }
