@@ -1,0 +1,26 @@
+function number(value, name) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) throw new Error(`Candle inválido: ${name}`);
+  return n;
+}
+
+export function normalizeCandles(rows) {
+  if (!Array.isArray(rows)) throw new TypeError('Candles precisam ser uma lista');
+
+  return rows.map((row, index) => {
+    const candle = {
+      timestamp: number(row.timestamp, 'timestamp'),
+      open: number(row.open ?? row.o, 'open'),
+      high: number(row.high ?? row.h, 'high'),
+      low: number(row.low ?? row.l, 'low'),
+      close: number(row.close ?? row.c, 'close'),
+      volume: number(row.volume ?? row.v ?? 0, 'volume')
+    };
+
+    if (candle.high < candle.low || candle.high < candle.open || candle.high < candle.close ||
+        candle.low > candle.open || candle.low > candle.close) {
+      throw new Error(`Candle OHLC inválido no índice ${index}`);
+    }
+    return candle;
+  });
+}
