@@ -22,13 +22,40 @@
   letter-spacing: .02em;
 }
 
+.app-actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .app-status {
   min-width: 0;
+  max-width: 42vw;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #9ca3af;
   font-size: 12px;
+}
+
+.scale-toggle {
+  min-width: 68px;
+  min-height: 34px;
+  border: 1px solid #343c48;
+  border-radius: 8px;
+  background: #171d25;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  touch-action: manipulation;
+}
+
+.scale-toggle[aria-pressed="true"] {
+  border-color: #64748b;
+  color: #f8fafc;
+  background: #202936;
 }
 
 .chart-shell {
