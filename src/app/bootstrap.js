@@ -6,12 +6,13 @@ import { attachPointerInteraction } from '../interaction/pointer.js';
 import { attachScaleToggle } from '../ui/scale-toggle.js';
 
 const API_BASE = 'https://oraculum-data-api.4avalonuse.workers.dev';
+const INITIAL_CANDLES = 120;
 
 export async function bootstrap() {
   const status = document.querySelector('#status');
   const chartHost = document.querySelector('#chart');
   const scaleButton = document.querySelector('#scale-toggle');
-
+  const fitButton = document.querySelector('#fit-toggle');
   const dataClient = createDataClient(API_BASE);
   const viewport = createViewport();
 
@@ -20,18 +21,37 @@ export async function bootstrap() {
 
   const raw = await dataClient.loadCandles({ provider: 'yahoo', symbol: 'BTC-USD', interval: '1d' });
   const candles = normalizeCandles(raw);
-
-  viewport.setDataBounds({
+  const dataBounds = {
     x: { min: candles[0]?.timestamp ?? 0, max: candles.at(-1)?.timestamp ?? 0 },
-    y: {
-      min: Math.min(...candles.map(c => c.low)),
-      max: Math.max(...candles.map(c => c.high))
-    }
-  });
+    y: { min: Math.min(...candles.map(c => c.low)), max: Math.max(...candles.map(c => c.high)) }
+  };
+  viewport.setDataBounds(dataBounds);
+
+  const visible = candles.slice(-Math.min(INITIAL_CANDLES, candles.length));
+  viewport.fitX({ min: visible[0]?.timestamp ?? dataBounds.x.min, max: visible.at(-1)?.timestamp ?? dataBounds.x.max });
+  viewport.fitY({ min: Math.min(...visible.map(c => c.low)), max: Math.max(...visible.map(c => c.high)) });
 
   const chart = createChart(chartHost, candles, viewport);
   attachPointerInteraction({ canvas: chart.canvas, viewport, draw: chart.draw });
   attachScaleToggle({ button: scaleButton, viewport, draw: chart.draw });
+
+  let fitPressTimer = null;
+  const fitVisible = () => {
+    const state = viewport.getState();
+    const shown = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
+    if (!shown.length) return;
+    viewport.fitY({ min: Math.min(...shown.map(c => c.low)), max: Math.max(...shown.map(c => c.high)) });
+    chart.draw();
+  };
+  const fitAll = () => { viewport.fitAll(); chart.draw(); };
+
+  fitButton.addEventListener('pointerdown', () => { fitPressTimer = setTimeout(fitAll, 550); });
+  fitButton.addEventListener('pointerup', () => {
+    if (fitPressTimer) { clearTimeout(fitPressTimer); fitPressTimer = null; fitVisible(); }
+  });
+  fitButton.addEventListener('pointercancel', () => {
+    if (fitPressTimer) { clearTimeout(fitPressTimer); fitPressTimer = null; }
+  });
 
   chartHost.classList.remove('is-loading', 'is-error');
   status.textContent = `BTC-USD · ${candles.length} candles`;
