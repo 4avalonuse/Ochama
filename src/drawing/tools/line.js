@@ -1,6 +1,8 @@
 import { registerDrawingTool } from '../core/drawing-registry.js';
 import { toScaleValue, fromScaleValue, normalizeScaleType } from '../../viewport/scale.js';
 
+const LINE_SEGMENTS = 120;
+
 export function lineTool() {
   return {
     type: 'line',
@@ -17,39 +19,38 @@ export function lineTool() {
   };
 }
 
-function endpoint(point, drawing, transform, tolerance = 11) {
-  const start = transform.marketToScreen(drawing.start);
-  const end = transform.marketToScreen(drawing.end);
-  if (!start || !end) return null;
-  if (Math.hypot(point.x - start.x, point.y - start.y) <= tolerance) return 'start';
-  if (Math.hypot(point.x - end.x, point.y - end.y) <= tolerance) return 'end';
-  return null;
+function linePoints(drawing, transform) {
+  const scaleType = normalizeScaleType(drawing.scaleType);
+  const scaledStart = toScaleValue(drawing.start.price, scaleType);
+  const scaledEnd = toScaleValue(drawing.end.price, scaleType);
+  if (!Number.isFinite(scaledStart) || !Number.isFinite(scaledEnd)) return [];
+
+  const points = [];
+  for (let i = 0; i <= LINE_SEGMENTS; i += 1) {
+    const t = i / LINE_SEGMENTS;
+    const scaledPrice = scaledStart + (scaledEnd - scaledStart) * t;
+    const price = fromScaleValue(scaledPrice, scaleType);
+    const timestamp = drawing.start.timestamp + (drawing.end.timestamp - drawing.start.timestamp) * t;
+    const screen = transform.marketToScreen({ timestamp, price });
+    if (screen) points.push(screen);
+  }
+  return points;
 }
 
 export function lineRenderer(context, drawing, transform) {
   const start = transform.marketToScreen(drawing.start);
   const end = transform.marketToScreen(drawing.end);
-  if (!start || !end) return;
+  const points = linePoints(drawing, transform);
+  if (!start || !end || points.length < 2) return;
 
-  const scaleType = normalizeScaleType(drawing.scaleType);
-  const segments = 40;
   context.save();
   context.strokeStyle = '#60a5fa';
   context.lineWidth = 2;
   context.beginPath();
-
-  for (let i = 0; i <= segments; i += 1) {
-    const t = i / segments;
-    const scaledStart = toScaleValue(drawing.start.price, scaleType);
-    const scaledEnd = toScaleValue(drawing.end.price, scaleType);
-    const scaledPrice = scaledStart + (scaledEnd - scaledStart) * t;
-    const price = fromScaleValue(scaledPrice, scaleType);
-    const timestamp = drawing.start.timestamp + (drawing.end.timestamp - drawing.start.timestamp) * t;
-    const screen = transform.marketToScreen({ timestamp, price });
-    if (!screen) continue;
-    if (i === 0) context.moveTo(screen.x, screen.y);
-    else context.lineTo(screen.x, screen.y);
-  }
+  points.forEach((point, index) => {
+    if (index === 0) context.moveTo(point.x, point.y);
+    else context.lineTo(point.x, point.y);
+  });
   context.stroke();
 
   context.fillStyle = '#60a5fa';
@@ -71,27 +72,19 @@ export function lineHitTestPart(point, drawing, transform) {
 }
 
 export function lineHitTest(point, drawing, transform, tolerance = 8) {
-  const scaleType = normalizeScaleType(drawing.scaleType);
-  const segments = 40;
-  let previous = null;
-
-  for (let i = 0; i <= segments; i += 1) {
-    const t = i / segments;
-    const scaledStart = toScaleValue(drawing.start.price, scaleType);
-    const scaledEnd = toScaleValue(drawing.end.price, scaleType);
-    const price = fromScaleValue(scaledStart + (scaledEnd - scaledStart) * t, scaleType);
-    const timestamp = drawing.start.timestamp + (drawing.end.timestamp - drawing.start.timestamp) * t;
-    const current = transform.marketToScreen({ timestamp, price });
-    if (previous && current) {
-      const dx = current.x - previous.x;
-      const dy = current.y - previous.y;
-      const lengthSq = dx * dx + dy * dy;
-      const u = lengthSq
-        ? Math.max(0, Math.min(1, ((point.x - previous.x) * dx + (point.y - previous.y) * dy) / lengthSq))
-        : 0;
-      if (Math.hypot(point.x - (previous.x + u * dx), point.y - (previous.y + u * dy)) <= tolerance) return true;
-    }
-    previous = current;
+  const points = linePoints(drawing, transform);
+  for (let i = 1; i < points.length; i += 1) {
+    const previous = points[i - 1];
+    const current = points[i];
+    const dx = current.x - previous.x;
+    const dy = current.y - previous.y;
+    const lengthSq = dx * dx + dy * dy;
+    const u = lengthSq
+      ? Math.max(0, Math.min(1, ((point.x - previous.x) * dx + (point.y - previous.y) * dy) / lengthSq))
+      : 0;
+    const closestX = previous.x + u * dx;
+    const closestY = previous.y + u * dy;
+    if (Math.hypot(point.x - closestX, point.y - closestY) <= tolerance) return true;
   }
   return false;
 }
