@@ -8,30 +8,27 @@ import { attachFitToggle } from '../ui/fit-toggle.js';
 
 const API_BASE = 'https://oraculum-data-api.4avalonuse.workers.dev';
 const INITIAL_CANDLES = 120;
+const DATA_OPTIONS = { provider: 'yahoo', interval: '1d', currency: 'USD' };
 
 function dataBoundsFor(candles) {
   if (!candles.length) throw new Error('Nenhum candle disponível para o gráfico');
-
   return {
     x: { min: candles[0].timestamp, max: candles.at(-1).timestamp },
-    y: {
-      min: Math.min(...candles.map(c => c.low)),
-      max: Math.max(...candles.map(c => c.high))
-    }
+    y: { min: Math.min(...candles.map(c => c.low)), max: Math.max(...candles.map(c => c.high)) }
   };
 }
-
 function visibleBoundsFor(candles, visible) {
   return {
-    x: {
-      min: visible[0]?.timestamp ?? candles[0].timestamp,
-      max: visible.at(-1)?.timestamp ?? candles.at(-1).timestamp
-    },
-    y: {
-      min: Math.min(...visible.map(c => c.low)),
-      max: Math.max(...visible.map(c => c.high))
-    }
+    x: { min: visible[0]?.timestamp ?? candles[0].timestamp, max: visible.at(-1)?.timestamp ?? candles.at(-1).timestamp },
+    y: { min: Math.min(...visible.map(c => c.low)), max: Math.max(...visible.map(c => c.high)) }
   };
+}
+function formatPrice(value) {
+  return Number(value).toLocaleString('en-US', { maximumFractionDigits: value >= 100 ? 2 : 6 });
+}
+function formatRefresh(value) {
+  if (!value) return 'sem refresh';
+  return new Date(Number(value)).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 export async function bootstrap() {
@@ -39,15 +36,30 @@ export async function bootstrap() {
   const chartHost = document.querySelector('#chart');
   const scaleButton = document.querySelector('#scale-toggle');
   const fitButton = document.querySelector('#fit-toggle');
+  const refreshButton = document.querySelector('#refresh-data');
   const assetSelect = document.querySelector('#asset-select');
   const dataClient = createDataClient(API_BASE);
-
   let active = null;
 
-  async function loadAsset(symbol) {
+  function optionsFor(symbol) { return { ...DATA_OPTIONS, symbol }; }
+
+  function showInfo(symbol, candles, meta) {
+    const latest = candles.at(-1);
+    const server = meta?.sourceName || meta?.provider || '—';
+    const refreshed = meta?.updatedAt;
+    status.textContent = latest
+      ? `${symbol} · ${formatPrice(latest.close)} · ${server} · ${formatRefresh(refreshed)}`
+      : `${symbol} · ${server} · sem candles`;
+  }
+
+  async function loadAsset(symbol, result = null) {
     chartHost.classList.add('is-loading');
     chartHost.classList.remove('is-error');
     status.textContent = `Carregando ${symbol}…`;
+
+    const loaded = result || await dataClient.loadCandles(optionsFor(symbol));
+    const candles = normalizeCandles(loaded.candles);
+    const meta = loaded.meta;
 
     if (active) {
       active.scaleCleanup?.();
@@ -57,14 +69,7 @@ export async function bootstrap() {
     }
 
     const viewport = createViewport();
-    const raw = await dataClient.loadCandles({
-      provider: 'yahoo',
-      symbol,
-      interval: '1d'
-    });
-    const candles = normalizeCandles(raw);
-    const dataBounds = dataBoundsFor(candles);
-    viewport.setDataBounds(dataBounds);
+    viewport.setDataBounds(dataBoundsFor(candles));
 
     const visible = candles.slice(-Math.min(INITIAL_CANDLES, candles.length));
     const visibleBounds = visibleBoundsFor(candles, visible);
@@ -72,42 +77,30 @@ export async function bootstrap() {
     viewport.fitY(visibleBounds.y);
 
     const chart = createChart(chartHost, candles, viewport);
-    const interaction = attachPointerInteraction({
-      canvas: chart.canvas,
-      viewport,
-      draw: chart.draw
-    });
+    const interaction = attachPointerInteraction({ canvas: chart.canvas, viewport, draw: chart.draw });
     interaction.setMode('navigation');
 
     const fitVisiblePrice = () => {
       const state = viewport.getState();
       const shown = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
-      if (!shown.length) return;
-
-      viewport.fitY({
+      if (shown.length) viewport.fitY({
         min: Math.min(...shown.map(c => c.low)),
         max: Math.max(...shown.map(c => c.high))
       });
     };
 
     const scaleCleanup = attachScaleToggle({
-      button: scaleButton,
-      viewport,
-      draw: chart.draw,
-      onScaleChanged: fitVisiblePrice
+      button: scaleButton, viewport, draw: chart.draw, onScaleChanged: fitVisiblePrice
     });
     const fitCleanup = attachFitToggle({
-      button: fitButton,
-      viewport,
-      candles,
-      draw: chart.draw
+      button: fitButton, viewport, candles, draw: chart.draw
     });
 
-    active = { viewport, interaction, chart, scaleCleanup, fitCleanup, candles, symbol };
+    active = { viewport, interaction, chart, scaleCleanup, fitCleanup, candles, symbol, meta };
     window.ochama = active;
 
     chartHost.classList.remove('is-loading', 'is-error');
-    status.textContent = `${symbol} · ${candles.length} candles`;
+    showInfo(symbol, candles, meta);
   }
 
   assetSelect?.addEventListener('change', () => {
@@ -117,6 +110,22 @@ export async function bootstrap() {
       chartHost.classList.add('is-error');
       status.textContent = `Erro: ${error?.message || 'falha desconhecida'}`;
     });
+  });
+
+  refreshButton?.addEventListener('click', async () => {
+    const symbol = assetSelect?.value || 'BTC-USD';
+    refreshButton.disabled = true;
+    status.textContent = `Atualizando ${symbol}…`;
+    try {
+      const result = await dataClient.refresh(optionsFor(symbol));
+      await loadAsset(symbol, result);
+    } catch (error) {
+      console.error('[Ochama refresh]', error);
+      status.textContent = `Refresh: ${error?.message || 'falha'}`;
+      chartHost.classList.add('is-error');
+    } finally {
+      refreshButton.disabled = false;
+    }
   });
 
   await loadAsset(assetSelect?.value || 'BTC-USD');
