@@ -1,23 +1,9 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ochama</title><link rel="stylesheet" href="./src/styles/app.css?v=20260925-2"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ochama</title><link rel="stylesheet" href="./src/styles/app.css?v=20260925-3"></head>
 <body>
 <main id="app">
-<header class="app-header">
-  <div class="app-brand"><span class="brand-mark" aria-hidden="true">O</span><span class="brand-copy"><strong>OCHAMA</strong><small>ORACULUM · CHART</small></span></div>
-  <div class="market-header">
-    <select id="asset-select" class="asset-select" aria-label="Ativo"><option value="BTC-USD" selected>BTC-USD</option><option value="SOL-USD">SOL-USD</option></select>
-    <span id="asset-icon" class="asset-icon btc" aria-hidden="true"><span>₿</span></span>
-    <div class="asset-name"><strong id="asset-symbol">BTC-USD</strong><small id="asset-name">Bitcoin / USD</small></div>
-    <div class="price-block"><strong id="asset-price">—</strong><small id="asset-change">—</small></div>
-    <div class="data-block"><small>Servidor</small><strong id="data-source">—</strong></div>
-    <div class="data-block refresh-info"><small>Último refresh</small><strong id="data-refresh">—</strong></div>
-    <button id="refresh-data" class="refresh-data" type="button"><span aria-hidden="true">↻</span><b>ATUALIZAR</b></button>
-  </div>
-  <span id="status" class="app-status" aria-live="polite">Inicializando…</span>
-</header>
+<header class="app-header"><div class="app-brand">OCHAMA</div><div class="market-header"><select id="asset-select" class="asset-select" aria-label="Ativo"><option value="BTC-USD" selected>₿ BTCUSD</option><option value="SOL-USD">SOL SOLUSD</option></select><span id="asset-price" class="asset-price">—</span><span class="data-source"><span id="data-source">Yahoo</span></span><button id="refresh-data" class="header-action" type="button" aria-label="Atualizar dados">↻</button><button id="config-button" class="header-action" type="button" aria-label="Configurações">⚙</button></div><span id="status" class="app-status" aria-live="polite">Inicializando…</span></header>
 <section id="chart" class="chart-shell" aria-label="Gráfico"><button id="fit-toggle" class="fit-toggle" type="button">FIT</button></section>
 <footer class="chart-footer"><button id="scale-toggle" class="scale-toggle" type="button" aria-pressed="false">NORMAL</button></footer>
-</main>
-<script type="module" src="./src/app/bootstrap.js?v=20260925-2"></script>
-</body></html>
+</main><script type="module" src="./src/app/bootstrap.js?v=20260925-3"></script></body></html>
