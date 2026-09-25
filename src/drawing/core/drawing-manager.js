@@ -9,7 +9,6 @@ export function createDrawingManager({ symbol, provider, interval, drawings = []
   function setDrawings(drawings, record = true) {
     const next = cloneDrawings(drawings);
     if (record) history.commit(next);
-    else history = createHistory(next);
     document = { ...document, drawings: next };
   }
 
@@ -27,9 +26,9 @@ export function createDrawingManager({ symbol, provider, interval, drawings = []
     remove(id) {
       setDrawings(document.drawings.filter(item => item.id !== id));
     },
-    replace(id, drawing) {
+    replace(id, drawing, record = true) {
       if (!getDrawingTool(drawing?.type)) throw new Error(`Drawing tool desconhecida: ${drawing?.type}`);
-      setDrawings(document.drawings.map(item => item.id === id ? drawing : item));
+      setDrawings(document.drawings.map(item => item.id === id ? drawing : item), record);
     },
     undo() {
       const state = history.undo();
