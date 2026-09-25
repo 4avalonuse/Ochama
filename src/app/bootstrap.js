@@ -9,7 +9,7 @@ import { createChartStateStore } from '../storage/chart-state.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const INITIAL_CANDLES=120;
-const DATA_OPTIONS={interval:'1d',currency:'USD'};
+const DATA_OPTIONS={currency:'USD'};
 
 function dataBoundsFor(c){
   if(!c.length)throw new Error('Nenhum candle disponível para o gráfico');
@@ -37,6 +37,7 @@ export async function bootstrap(){
     refreshButton=document.querySelector('#refresh-data'),
     assetSelect=document.querySelector('#asset-select'),
     providerSelect=document.querySelector('#provider-select'),
+    intervalSelect=document.querySelector('#interval-select'),
     dataClient=createDataClient(API_BASE),
     stateStore=createChartStateStore();
 
@@ -47,10 +48,10 @@ export async function bootstrap(){
     'binance-us':{'BTC-USD':'BTCUSD'}
   };
 
-  function optionsFor(symbol,provider){
+  function optionsFor(symbol,provider,interval){
     const providerSymbol=PROVIDER_SYMBOLS[provider]?.[symbol];
     if(!providerSymbol)throw new Error(`Servidor ${provider} não disponível para ${symbol}`);
-    return{...DATA_OPTIONS,symbol:providerSymbol,provider}
+    return{...DATA_OPTIONS,symbol:providerSymbol,provider,interval}
   }
 
   function syncProviders(){
@@ -62,17 +63,17 @@ export async function bootstrap(){
   function saveActiveState(){
     if(!active?.viewport)return;
     stateStore.save(
-      {symbol:active.symbol,provider:active.provider,interval:DATA_OPTIONS.interval},
+      {symbol:active.symbol,provider:active.provider,interval:active.interval},
       active.viewport.getState()
     );
   }
 
-  async function loadAsset(symbol,provider,result=null){
+  async function loadAsset(symbol,provider,interval='1d',result=null){
     chartHost.classList.add('is-loading');
     chartHost.classList.remove('is-error');
     status.textContent='Carregando '+symbol+' · '+provider+'…';
 
-    const loaded=result||await dataClient.loadOrPopulate(optionsFor(symbol,provider)),
+    const loaded=result||await dataClient.loadOrPopulate(optionsFor(symbol,provider,interval)),
       candles=normalizeCandles(loaded.candles),
       meta=loaded.meta;
 
@@ -97,7 +98,7 @@ export async function bootstrap(){
     const savedState=stateStore.load({
       symbol,
       provider,
-      interval:DATA_OPTIONS.interval
+      interval
     });
 
     if(savedState)viewport.setState(savedState);
@@ -156,13 +157,14 @@ export async function bootstrap(){
       candles,
       symbol,
       provider,
+      interval,
       meta
     };
 
     stateStore.saveSelection({
       symbol,
       provider,
-      interval:DATA_OPTIONS.interval
+      interval
     });
 
     window.ochama=active;
@@ -172,7 +174,7 @@ export async function bootstrap(){
 
   assetSelect?.addEventListener('change',()=>{
     syncProviders();
-    loadAsset(assetSelect.value,providerSelect.value).catch(error=>{
+    loadAsset(assetSelect.value,providerSelect.value,intervalSelect.value).catch(error=>{
       console.error('[Ochama]',error);
       chartHost.classList.remove('is-loading');
       chartHost.classList.add('is-error');
@@ -181,8 +183,17 @@ export async function bootstrap(){
   });
 
   providerSelect?.addEventListener('change',()=>{
-    loadAsset(assetSelect.value,providerSelect.value).catch(error=>{
+    loadAsset(assetSelect.value,providerSelect.value,intervalSelect.value).catch(error=>{
       console.error('[Ochama provider]',error);
+      chartHost.classList.remove('is-loading');
+      chartHost.classList.add('is-error');
+      status.textContent='Erro: '+(error?.message||'falha desconhecida')
+    })
+  });
+
+  intervalSelect?.addEventListener('change',()=>{
+    loadAsset(assetSelect.value,providerSelect.value,intervalSelect.value).catch(error=>{
+      console.error('[Ochama interval]',error);
       chartHost.classList.remove('is-loading');
       chartHost.classList.add('is-error');
       status.textContent='Erro: '+(error?.message||'falha desconhecida')
@@ -191,14 +202,15 @@ export async function bootstrap(){
 
   refreshButton?.addEventListener('click',async()=>{
     const symbol=assetSelect?.value||'BTC-USD',
-      provider=providerSelect?.value||'yahoo';
+      provider=providerSelect?.value||'yahoo',
+      interval=intervalSelect?.value||'1d';
 
     refreshButton.disabled=true;
     status.textContent='Atualizando '+symbol+' · '+provider+'…';
 
     try{
-      const result=await dataClient.refresh(optionsFor(symbol,provider));
-      await loadAsset(symbol,provider,result);
+      const result=await dataClient.refresh(optionsFor(symbol,provider,interval));
+      await loadAsset(symbol,provider,interval,result);
     }catch(error){
       console.error('[Ochama refresh]',error);
       status.textContent='Refresh: '+(error?.message||'falha');
@@ -220,9 +232,12 @@ export async function bootstrap(){
     assetSelect.value=savedSelection.symbol;
     providerSelect.value=savedSelection.provider;
   }
+  if(savedSelection?.interval && [...intervalSelect.options].some(o=>o.value===savedSelection.interval)){
+    intervalSelect.value=savedSelection.interval;
+  }
 
   syncProviders();
-  await loadAsset(assetSelect?.value||'BTC-USD',providerSelect?.value||'yahoo');
+  await loadAsset(assetSelect?.value||'BTC-USD',providerSelect?.value||'yahoo',intervalSelect?.value||'1d');
 }
 
 bootstrap().catch(error=>{
