@@ -1,5 +1,6 @@
 export function createDataClient(baseUrl) {
   const root = String(baseUrl).replace(/\/$/, '');
+  let catalogCache = null;
 
   async function request(path, options = {}) {
     const response = await fetch(`${root}${path}`, {
@@ -17,14 +18,24 @@ export function createDataClient(baseUrl) {
     return payload;
   }
 
-  return {
-    async loadCandles({ provider, symbol, interval, currency = null, kind = 'ohlcv' }) {
-      const catalog = await request('/api/datasets');
-      if (!catalog?.ok || !Array.isArray(catalog.data)) {
-        throw new Error('Contrato do catálogo inválido');
-      }
+  async function listDatasets() {
+    if (catalogCache) return catalogCache;
+    const catalog = await request('/api/datasets');
+    if (!catalog?.ok || !Array.isArray(catalog.data)) {
+      throw new Error('Contrato do catálogo inválido');
+    }
+    catalogCache = catalog.data;
+    return catalogCache;
+  }
 
-      const dataset = catalog.data.find(item =>
+  return {
+    async listDatasets() {
+      return listDatasets();
+    },
+
+    async loadCandles({ provider, symbol, interval, currency = null, kind = 'ohlcv' }) {
+      const catalog = await listDatasets();
+      const dataset = catalog.find(item =>
         item?.provider === provider &&
         item?.symbol === symbol &&
         item?.interval === interval &&
