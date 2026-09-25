@@ -48,3 +48,5 @@
 .drawing-tool:disabled{opacity:.38}
 
 @media(max-width:480px){.drawing-toolbar{top:8px;left:8px;right:8px;gap:3px;padding:3px;overflow-x:auto;scrollbar-width:none}.drawing-toolbar::-webkit-scrollbar{display:none}.drawing-tool{flex:0 0 auto;padding:0 8px}}
+
+.drawing-color{width:32px;height:30px;display:flex;align-items:center;justify-content:center;padding:0 5px;border:1px solid #2d3d52;border-radius:7px;background:#121b26;box-shadow:0 2px 7px rgba(0,0,0,.16);cursor:pointer}.drawing-color:hover{border-color:#435a74;background:#162230}.drawing-color input{width:20px;height:20px;padding:0;border:0;background:transparent;cursor:pointer}.drawing-color input::-webkit-color-swatch-wrapper{padding:0}.drawing-color input::-webkit-color-swatch{border:1px solid #60758d;border-radius:5px}.drawing-color input::-moz-color-swatch{border:1px solid #60758d;border-radius:5px}@media(max-width:480px){.drawing-color{flex:0 0 32px}}
