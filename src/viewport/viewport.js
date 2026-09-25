@@ -42,10 +42,15 @@ export function createViewport() {
       const x = { min: Number(next?.x?.min), max: Number(next?.x?.max) };
       const y = { min: Number(next?.y?.min), max: Number(next?.y?.max) };
       if (!validRange(x) || !validRange(y)) return false;
+
+      const nextScale = next?.yScaleType ? normalizeScaleType(next.yScaleType) : yViewport.type;
+      const b = bounds.get();
+      if (nextScale === 'logarithmic' && (b.y.min <= 0 || b.y.max <= 0)) return false;
+
+      yViewport.setType(nextScale);
       range = { x, y };
-      if (next?.yScaleType && !this.setYScaleType(next.yScaleType)) return false;
-      range.y = clampY(range.y, bounds.get().y, yViewport);
-      range.x = panTime(range.x, 0, bounds.get().x);
+      range.y = clampY(range.y, b.y, yViewport);
+      range.x = panTime(range.x, 0, b.x);
       return true;
     },
     getYScaleType() { return yViewport.type; },
