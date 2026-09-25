@@ -5,21 +5,229 @@ import { createChart } from '../chart/render.js';
 import { attachPointerInteraction } from '../interaction/pointer.js';
 import { attachScaleToggle } from '../ui/scale-toggle.js';
 import { attachFitToggle } from '../ui/fit-toggle.js';
+import { createChartStateStore } from '../storage/chart-state.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const INITIAL_CANDLES=120;
 const DATA_OPTIONS={interval:'1d',currency:'USD'};
-function dataBoundsFor(c){if(!c.length)throw new Error('Nenhum candle disponível para o gráfico');return{x:{min:c[0].timestamp,max:c.at(-1).timestamp},y:{min:Math.min(...c.map(x=>x.low)),max:Math.max(...c.map(x=>x.high))}}}
-function visibleBoundsFor(c,v){return{x:{min:v[0]?.timestamp??c[0].timestamp,max:v.at(-1)?.timestamp??c.at(-1).timestamp},y:{min:Math.min(...v.map(x=>x.low)),max:Math.max(...v.map(x=>x.high))}}}
-function formatPrice(v){return Number(v).toLocaleString('en-US',{maximumFractionDigits:v>=100?2:6})}
-function updateHeader(symbol,candles){const latest=candles.at(-1);document.querySelector('#asset-price').textContent=latest?formatPrice(latest.close):'—';}
-export async function bootstrap(){const status=document.querySelector('#status'),chartHost=document.querySelector('#chart'),scaleButton=document.querySelector('#scale-toggle'),fitButton=document.querySelector('#fit-toggle'),refreshButton=document.querySelector('#refresh-data'),assetSelect=document.querySelector('#asset-select'),providerSelect=document.querySelector('#provider-select'),dataClient=createDataClient(API_BASE);let active=null;
-const PROVIDER_SYMBOLS={yahoo:{'BTC-USD':'BTC-USD','SOL-USD':'SOL-USD'},'binance-us':{'BTC-USD':'BTCUSD'}};
-function optionsFor(symbol,provider){const providerSymbol=PROVIDER_SYMBOLS[provider]?.[symbol];if(!providerSymbol)throw new Error(`Servidor ${provider} não disponível para ${symbol}`);return{...DATA_OPTIONS,symbol:providerSymbol,provider}}
-function syncProviders(){const symbol=assetSelect.value;[...providerSelect.options].forEach(o=>o.hidden=symbol!=='BTC-USD'&&o.value!=='yahoo');if(symbol!=='BTC-USD')providerSelect.value='yahoo';}
-async function loadAsset(symbol,provider,result=null){chartHost.classList.add('is-loading');chartHost.classList.remove('is-error');status.textContent='Carregando '+symbol+' · '+provider+'…';const loaded=result||await dataClient.loadOrPopulate(optionsFor(symbol,provider)),candles=normalizeCandles(loaded.candles),meta=loaded.meta;if(active){active.scaleCleanup?.();active.fitCleanup?.();active.interaction.detach();active.chart.destroy()}const viewport=createViewport();viewport.setDataBounds(dataBoundsFor(candles));const visible=candles.slice(-Math.min(INITIAL_CANDLES,candles.length)),vb=visibleBoundsFor(candles,visible);viewport.fitX(vb.x);viewport.fitY(vb.y);const chart=createChart(chartHost,candles,viewport),interaction=attachPointerInteraction({canvas:chart.canvas,viewport,draw:chart.draw});interaction.setMode('navigation');const fitVisiblePrice=()=>{const state=viewport.getState(),shown=candles.filter(c=>c.timestamp>=state.x.min&&c.timestamp<=state.x.max);if(shown.length)viewport.fitY({min:Math.min(...shown.map(c=>c.low)),max:Math.max(...shown.map(c=>c.high))})};const scaleCleanup=attachScaleToggle({button:scaleButton,viewport,draw:chart.draw,onScaleChanged:fitVisiblePrice}),fitCleanup=attachFitToggle({button:fitButton,viewport,candles,draw:chart.draw});active={viewport,interaction,chart,scaleCleanup,fitCleanup,candles,symbol,provider,meta};window.ochama=active;chartHost.classList.remove('is-loading','is-error');updateHeader(symbol,candles)}
-assetSelect?.addEventListener('change',()=>{syncProviders();loadAsset(assetSelect.value,providerSelect.value).catch(error=>{console.error('[Ochama]',error);chartHost.classList.remove('is-loading');chartHost.classList.add('is-error');status.textContent='Erro: '+(error?.message||'falha desconhecida')})});
-providerSelect?.addEventListener('change',()=>loadAsset(assetSelect.value,providerSelect.value).catch(error=>{console.error('[Ochama provider]',error);chartHost.classList.remove('is-loading');chartHost.classList.add('is-error');status.textContent='Erro: '+(error?.message||'falha desconhecida')}));
-refreshButton?.addEventListener('click',async()=>{const symbol=assetSelect?.value||'BTC-USD',provider=providerSelect?.value||'yahoo';refreshButton.disabled=true;status.textContent='Atualizando '+symbol+' · '+provider+'…';try{const result=await dataClient.refresh(optionsFor(symbol,provider));await loadAsset(symbol,provider,result)}catch(error){console.error('[Ochama refresh]',error);status.textContent='Refresh: '+(error?.message||'falha');chartHost.classList.add('is-error')}finally{refreshButton.disabled=false}});
-document.querySelector('#config-button')?.addEventListener('click',()=>{status.textContent='Configurações: em breve'});syncProviders();await loadAsset(assetSelect?.value||'BTC-USD',providerSelect?.value||'yahoo')}
-bootstrap().catch(error=>{console.error('[Ochama]',error);document.querySelector('#chart').classList.remove('is-loading');document.querySelector('#chart').classList.add('is-error');document.querySelector('#status').textContent='Erro: '+(error?.message||'falha desconhecida')});
+
+function dataBoundsFor(c){
+  if(!c.length)throw new Error('Nenhum candle disponível para o gráfico');
+  return{x:{min:c[0].timestamp,max:c.at(-1).timestamp},y:{min:Math.min(...c.map(x=>x.low)),max:Math.max(...c.map(x=>x.high))}}
+}
+
+function visibleBoundsFor(c,v){
+  return{x:{min:v[0]?.timestamp??c[0].timestamp,max:v.at(-1)?.timestamp??c.at(-1).timestamp},y:{min:Math.min(...v.map(x=>x.low)),max:Math.max(...v.map(x=>x.high))}}
+}
+
+function formatPrice(v){
+  return Number(v).toLocaleString('en-US',{maximumFractionDigits:v>=100?2:6})
+}
+
+function updateHeader(symbol,candles){
+  const latest=candles.at(-1);
+  document.querySelector('#asset-price').textContent=latest?formatPrice(latest.close):'—';
+}
+
+export async function bootstrap(){
+  const status=document.querySelector('#status'),
+    chartHost=document.querySelector('#chart'),
+    scaleButton=document.querySelector('#scale-toggle'),
+    fitButton=document.querySelector('#fit-toggle'),
+    refreshButton=document.querySelector('#refresh-data'),
+    assetSelect=document.querySelector('#asset-select'),
+    providerSelect=document.querySelector('#provider-select'),
+    dataClient=createDataClient(API_BASE),
+    stateStore=createChartStateStore();
+
+  let active=null;
+
+  const PROVIDER_SYMBOLS={
+    yahoo:{'BTC-USD':'BTC-USD','SOL-USD':'SOL-USD'},
+    'binance-us':{'BTC-USD':'BTCUSD'}
+  };
+
+  function optionsFor(symbol,provider){
+    const providerSymbol=PROVIDER_SYMBOLS[provider]?.[symbol];
+    if(!providerSymbol)throw new Error(`Servidor ${provider} não disponível para ${symbol}`);
+    return{...DATA_OPTIONS,symbol:providerSymbol,provider}
+  }
+
+  function syncProviders(){
+    const symbol=assetSelect.value;
+    [...providerSelect.options].forEach(o=>o.hidden=symbol!=='BTC-USD'&&o.value!=='yahoo');
+    if(symbol!=='BTC-USD')providerSelect.value='yahoo';
+  }
+
+  function saveActiveState(){
+    if(!active?.viewport)return;
+    stateStore.save(
+      {symbol:active.symbol,provider:active.provider,interval:DATA_OPTIONS.interval},
+      active.viewport.getState()
+    );
+  }
+
+  async function loadAsset(symbol,provider,result=null){
+    chartHost.classList.add('is-loading');
+    chartHost.classList.remove('is-error');
+    status.textContent='Carregando '+symbol+' · '+provider+'…';
+
+    const loaded=result||await dataClient.loadOrPopulate(optionsFor(symbol,provider)),
+      candles=normalizeCandles(loaded.candles),
+      meta=loaded.meta;
+
+    saveActiveState();
+
+    if(active){
+      active.scaleCleanup?.();
+      active.fitCleanup?.();
+      active.interaction.detach();
+      active.chart.destroy();
+    }
+
+    const viewport=createViewport();
+    viewport.setDataBounds(dataBoundsFor(candles));
+
+    const visible=candles.slice(-Math.min(INITIAL_CANDLES,candles.length)),
+      vb=visibleBoundsFor(candles,visible);
+
+    viewport.fitX(vb.x);
+    viewport.fitY(vb.y);
+
+    const savedState=stateStore.load({
+      symbol,
+      provider,
+      interval:DATA_OPTIONS.interval
+    });
+
+    if(savedState)viewport.setState(savedState);
+
+    const chart=createChart(chartHost,candles,viewport);
+
+    const persist=()=>{
+      stateStore.save(
+        {symbol,provider,interval:DATA_OPTIONS.interval},
+        viewport.getState()
+      );
+    };
+
+    const interaction=attachPointerInteraction({
+      canvas:chart.canvas,
+      viewport,
+      draw:chart.draw,
+      onViewportChanged:persist
+    });
+
+    interaction.setMode('navigation');
+
+    const fitVisiblePrice=()=>{
+      const state=viewport.getState(),
+        shown=candles.filter(c=>c.timestamp>=state.x.min&&c.timestamp<=state.x.max);
+      if(shown.length)viewport.fitY({
+        min:Math.min(...shown.map(c=>c.low)),
+        max:Math.max(...shown.map(c=>c.high))
+      });
+    };
+
+    const scaleCleanup=attachScaleToggle({
+      button:scaleButton,
+      viewport,
+      draw:chart.draw,
+      onScaleChanged:()=>{
+        fitVisiblePrice();
+        persist();
+      }
+    });
+
+    const fitCleanup=attachFitToggle({
+      button:fitButton,
+      viewport,
+      candles,
+      draw:chart.draw,
+      onViewportChanged:persist
+    });
+
+    active={
+      viewport,
+      interaction,
+      chart,
+      scaleCleanup,
+      fitCleanup,
+      candles,
+      symbol,
+      provider,
+      meta
+    };
+
+    stateStore.saveSelection({
+      symbol,
+      provider,
+      interval:DATA_OPTIONS.interval
+    });
+
+    window.ochama=active;
+    chartHost.classList.remove('is-loading','is-error');
+    updateHeader(symbol,candles);
+  }
+
+  assetSelect?.addEventListener('change',()=>{
+    syncProviders();
+    loadAsset(assetSelect.value,providerSelect.value).catch(error=>{
+      console.error('[Ochama]',error);
+      chartHost.classList.remove('is-loading');
+      chartHost.classList.add('is-error');
+      status.textContent='Erro: '+(error?.message||'falha desconhecida')
+    })
+  });
+
+  providerSelect?.addEventListener('change',()=>{
+    loadAsset(assetSelect.value,providerSelect.value).catch(error=>{
+      console.error('[Ochama provider]',error);
+      chartHost.classList.remove('is-loading');
+      chartHost.classList.add('is-error');
+      status.textContent='Erro: '+(error?.message||'falha desconhecida')
+    })
+  });
+
+  refreshButton?.addEventListener('click',async()=>{
+    const symbol=assetSelect?.value||'BTC-USD',
+      provider=providerSelect?.value||'yahoo';
+
+    refreshButton.disabled=true;
+    status.textContent='Atualizando '+symbol+' · '+provider+'…';
+
+    try{
+      const result=await dataClient.refresh(optionsFor(symbol,provider));
+      await loadAsset(symbol,provider,result);
+    }catch(error){
+      console.error('[Ochama refresh]',error);
+      status.textContent='Refresh: '+(error?.message||'falha');
+      chartHost.classList.add('is-error');
+    }finally{
+      refreshButton.disabled=false;
+    }
+  });
+
+  window.addEventListener('pagehide',saveActiveState);
+
+  document.querySelector('#config-button')?.addEventListener('click',()=>{
+    status.textContent='Configurações: em breve'
+  });
+
+  const savedSelection=stateStore.loadSelection();
+
+  if(savedSelection?.symbol && PROVIDER_SYMBOLS[savedSelection.provider]?.[savedSelection.symbol]){
+    assetSelect.value=savedSelection.symbol;
+    providerSelect.value=savedSelection.provider;
+  }
+
+  syncProviders();
+  await loadAsset(assetSelect?.value||'BTC-USD',providerSelect?.value||'yahoo');
+}
+
+bootstrap().catch(error=>{
+  console.error('[Ochama]',error);
+  document.querySelector('#chart').classList.remove('is-loading');
+  document.querySelector('#chart').classList.add('is-error');
+  document.querySelector('#status').textContent='Erro: '+(error?.message||'falha desconhecida')
+});
