@@ -6,13 +6,8 @@
 }
 
 .chart-shell.is-loading::after {
-  content: "Carregando gráfico…";
-  position: absolute;
-  inset: 50% auto auto 50%;
-  transform: translate(-50%, -50%);
-  color: #9ca3af;
-  font-size: 13px;
-  pointer-events: none;
+  content: "";
+  display: none;
 }
 
 .chart-shell.is-error::after {
