@@ -48,7 +48,10 @@ export async function bootstrap() {
 
   const raw = await dataClient.loadCandles({ provider: 'yahoo', symbol: 'BTC-USD', interval: '1d' });
   const candles = normalizeCandles(raw);
-  assetPrice.textContent = candles.at(-1).close.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const lastCandle = candles.at(-1);
+  if (assetPrice && lastCandle) {
+    assetPrice.textContent = Number(lastCandle.close).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
   const dataBounds = dataBoundsFor(candles);
   viewport.setDataBounds(dataBounds);
 
