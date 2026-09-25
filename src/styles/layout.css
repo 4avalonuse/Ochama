@@ -3,13 +3,14 @@
 .app-brand{flex:0 0 auto;font-size:15px;font-weight:700;letter-spacing:.02em}
 .app-actions{min-width:0;flex:1 1 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px}
 .app-status{min-width:0;flex:1 1 auto;max-width:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#9ca3af;font-size:12px;text-align:right}
-.scale-toggle,.fit-toggle{flex:0 0 58px;min-width:58px;min-height:34px;padding:0 8px;border:1px solid #343c48;border-radius:8px;background:#171d25;color:#cbd5e1;font-size:11px;font-weight:700;letter-spacing:.04em;white-space:nowrap;touch-action:manipulation}
-.scale-toggle[aria-pressed=true],.fit-toggle:active{border-color:#64748b;color:#f8fafc;background:#202936}
+.scale-toggle{flex:0 0 58px;min-width:58px;min-height:34px;padding:0 8px;border:1px solid #343c48;border-radius:8px;background:#171d25;color:#cbd5e1;font-size:11px;font-weight:700;letter-spacing:.04em;white-space:nowrap;touch-action:manipulation}
+.scale-toggle[aria-pressed=true]{border-color:#64748b;color:#f8fafc;background:#202936}
 .chart-shell{position:relative;flex:1 1 auto;min-height:320px;background:#0b0f14;overflow:hidden}
-
+.fit-toggle{position:absolute;left:10px;bottom:10px;z-index:5;width:46px;height:30px;padding:0;border:1px solid #343c48;border-radius:7px;background:#171d25;color:#cbd5e1;font-size:10px;font-weight:700;letter-spacing:.04em;white-space:nowrap;touch-action:manipulation}
+.fit-toggle:active{border-color:#64748b;color:#f8fafc;background:#202936}
 @media (max-width:420px){
   .app-header{gap:8px;padding:0 10px}
   .app-actions{gap:6px}
   .app-status{font-size:11px}
-  .scale-toggle,.fit-toggle{flex-basis:54px;min-width:54px}
+  .scale-toggle{flex-basis:54px;min-width:54px}
 }
