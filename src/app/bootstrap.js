@@ -21,7 +21,7 @@ function dataBoundsFor(c){
 }
 
 function visibleBoundsFor(c,v){
-  return{x:{min:v[0]?.timestamp??c[0].timestamp,max:v.at(-1)?.timestamp??c.at(-1).timestamp},y:{min:Math.min(...v.map(x=>x.low)),max:Math.max(...v.map(x=>x.high))}}
+  return{x:{min:v[0]?.timestamp??c[0].timestamp,max:v.at(-1)?.timestamp??c.at(-1).timestamp},y:{min:Math.min(...v.map(c=>c.low)),max:Math.max(...v.map(c=>c.high))}}
 }
 
 function formatPrice(v){
@@ -279,7 +279,7 @@ export async function bootstrap(){
     if(!manager) return;
     if(drawingUndoButton) drawingUndoButton.disabled=!manager.canUndo();
     if(drawingRedoButton) drawingRedoButton.disabled=!manager.canRedo();
-    if(drawingDeleteButton) drawingDeleteButton.disabled=!activeDrawingInteraction?.getSelectedId?.();
+    if(drawingDeleteButton) drawingDeleteButton.disabled=!manager.getDrawings().length;
   };
 
   const drawingChanged=()=>{
@@ -319,7 +319,13 @@ export async function bootstrap(){
       refreshDrawingActions();
     }
   });
-  drawingDeleteButton?.addEventListener('click',()=>activeDrawingInteraction?.deleteSelected?.());
+  drawingDeleteButton?.addEventListener('click',()=>{
+    const manager=active?.drawingManager;
+    const count=manager?.getDrawings?.().length||0;
+    if(!count) return;
+    if(!window.confirm(`Apagar todos os ${count} desenhos?`)) return;
+    activeDrawingInteraction?.clearAll?.();
+  });
   setToolbarMode('navigation');
 
   const savedSelection=stateStore.loadSelection();
