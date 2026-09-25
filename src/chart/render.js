@@ -1,5 +1,7 @@
 import { normalizeScaleType, toScaleValue, fromScaleValue } from '../viewport/scale.js';
 import { createPlotGeometry } from './plot-geometry.js';
+import { createDrawingTransform } from '../drawing/render/transform.js';
+import { createDrawingRenderer } from '../drawing/render/drawing-renderer.js';
 
 function finite(value) {
   return Number.isFinite(value);
@@ -97,13 +99,14 @@ function drawCandles(ctx, candles, state, plot) {
   ctx.restore();
 }
 
-export function createChart(host, candles, viewport) {
+export function createChart(host, candles, viewport, drawingManager = null) {
   const canvas = document.createElement('canvas');
   canvas.className = 'chart-canvas';
   canvas.setAttribute('aria-label', 'Gráfico de candles BTC-USD');
   host.prepend(canvas);
 
   const ctx = canvas.getContext('2d');
+  const drawingRenderer = createDrawingRenderer();
   if (!ctx) throw new Error('Canvas 2D indisponível');
 
   function resize() {
@@ -131,6 +134,11 @@ export function createChart(host, candles, viewport) {
 
     drawGrid(ctx, width, height, plot, state.y.min, state.y.max, normalizeScaleType(state.yScaleType));
     drawCandles(ctx, candles, state, plot);
+
+    if (drawingManager) {
+      const transform = createDrawingTransform({ viewport, plot });
+      drawingRenderer.render(ctx, drawingManager.getDrawings(), transform);
+    }
   }
 
   const observer = new ResizeObserver(resize);
