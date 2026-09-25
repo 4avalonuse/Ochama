@@ -21,8 +21,9 @@ function timestamp(value) {
 
 export function normalizeCandles(rows) {
   if (!Array.isArray(rows)) throw new TypeError('Candles precisam ser uma lista');
+  if (!rows.length) throw new Error('Nenhum candle recebido');
 
-  return rows.map((row, index) => {
+  const candles = rows.map((row, index) => {
     const candle = {
       // Aceita o contrato canônico futuro e o contrato legado do OChart (t/o/h/l/c/v).
       timestamp: timestamp(row.timestamp ?? row.t),
@@ -37,6 +38,20 @@ export function normalizeCandles(rows) {
         candle.low > candle.open || candle.low > candle.close) {
       throw new Error(`Candle OHLC inválido no índice ${index}`);
     }
+    if (candle.volume < 0) {
+      throw new Error(`Candle inválido: volume negativo no índice ${index}`);
+    }
+
     return candle;
   });
+
+  candles.sort((a, b) => a.timestamp - b.timestamp);
+
+  for (let i = 1; i < candles.length; i += 1) {
+    if (candles[i].timestamp === candles[i - 1].timestamp) {
+      throw new Error(`Candle duplicado no timestamp ${candles[i].timestamp}`);
+    }
+  }
+
+  return candles;
 }
