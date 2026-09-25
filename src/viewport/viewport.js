@@ -10,14 +10,18 @@ function clampY(range, bounds, yViewport) {
   const b = yViewport.type === 'logarithmic' ? Math.log(max) : max;
   let rMin = yViewport.type === 'logarithmic' ? Math.log(range.min) : range.min;
   let rMax = yViewport.type === 'logarithmic' ? Math.log(range.max) : range.max;
-  if (![a,b,rMin,rMax].every(Number.isFinite) || !(rMax > rMin)) return {min,max};
-  const span = rMax-rMin;
-  if (span >= b-a) return {min,max};
-  if (rMin < a) { rMin=a; rMax=a+span; }
-  if (rMax > b) { rMax=b; rMin=b-span; }
+  if (![a, b, rMin, rMax].every(Number.isFinite) || !(rMax > rMin)) return { min, max };
+  const span = rMax - rMin;
+  if (span >= b - a) return { min, max };
+  if (rMin < a) { rMin = a; rMax = a + span; }
+  if (rMax > b) { rMax = b; rMin = b - span; }
   return yViewport.type === 'logarithmic'
-    ? {min:Math.exp(rMin),max:Math.exp(rMax)}
-    : {min:rMin,max:rMax};
+    ? { min: Math.exp(rMin), max: Math.exp(rMax) }
+    : { min: rMin, max: rMax };
+}
+
+function validRange(range) {
+  return Number.isFinite(range?.min) && Number.isFinite(range?.max) && range.max > range.min;
 }
 
 export function createViewport() {
@@ -35,8 +39,14 @@ export function createViewport() {
     getBounds() { return bounds.get(); },
     getState() { return { x: { ...range.x }, y: { ...range.y }, yScaleType: yViewport.type }; },
     setState(next) {
-      range = { x: { min: Number(next.x.min), max: Number(next.x.max) }, y: { min: Number(next.y.min), max: Number(next.y.max) } };
-      if (next.yScaleType) this.setYScaleType(next.yScaleType);
+      const x = { min: Number(next?.x?.min), max: Number(next?.x?.max) };
+      const y = { min: Number(next?.y?.min), max: Number(next?.y?.max) };
+      if (!validRange(x) || !validRange(y)) return false;
+      range = { x, y };
+      if (next?.yScaleType && !this.setYScaleType(next.yScaleType)) return false;
+      range.y = clampY(range.y, bounds.get().y, yViewport);
+      range.x = panTime(range.x, 0, bounds.get().x);
+      return true;
     },
     getYScaleType() { return yViewport.type; },
     setYScaleType(type) {
