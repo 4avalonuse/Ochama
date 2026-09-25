@@ -39,48 +39,87 @@ export async function bootstrap() {
   const chartHost = document.querySelector('#chart');
   const scaleButton = document.querySelector('#scale-toggle');
   const fitButton = document.querySelector('#fit-toggle');
+  const assetSelect = document.querySelector('#asset-select');
   const dataClient = createDataClient(API_BASE);
-  const viewport = createViewport();
 
-  chartHost.classList.add('is-loading');
-  status.textContent = 'Carregando dados…';
+  let active = null;
 
-  const raw = await dataClient.loadCandles({ provider: 'yahoo', symbol: 'BTC-USD', interval: '1d' });
-  const candles = normalizeCandles(raw);
-  const dataBounds = dataBoundsFor(candles);
-  viewport.setDataBounds(dataBounds);
+  async function loadAsset(symbol) {
+    chartHost.classList.add('is-loading');
+    chartHost.classList.remove('is-error');
+    status.textContent = `Carregando ${symbol}…`;
 
-  const visible = candles.slice(-Math.min(INITIAL_CANDLES, candles.length));
-  const visibleBounds = visibleBoundsFor(candles, visible);
-  viewport.fitX(visibleBounds.x);
-  viewport.fitY(visibleBounds.y);
+    if (active) {
+      active.scaleCleanup?.();
+      active.fitCleanup?.();
+      active.interaction.detach();
+      active.chart.destroy();
+    }
 
-  const chart = createChart(chartHost, candles, viewport);
-  const interaction = attachPointerInteraction({ canvas: chart.canvas, viewport, draw: chart.draw });
-  interaction.setMode('navigation');
-  window.ochama = { viewport, interaction, chart };
-
-  const fitVisiblePrice = () => {
-    const state = viewport.getState();
-    const shown = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
-    if (!shown.length) return;
-
-    viewport.fitY({
-      min: Math.min(...shown.map(c => c.low)),
-      max: Math.max(...shown.map(c => c.high))
+    const viewport = createViewport();
+    const raw = await dataClient.loadCandles({
+      provider: 'yahoo',
+      symbol,
+      interval: '1d'
     });
-  };
+    const candles = normalizeCandles(raw);
+    const dataBounds = dataBoundsFor(candles);
+    viewport.setDataBounds(dataBounds);
 
-  attachScaleToggle({
-    button: scaleButton,
-    viewport,
-    draw: chart.draw,
-    onScaleChanged: fitVisiblePrice
+    const visible = candles.slice(-Math.min(INITIAL_CANDLES, candles.length));
+    const visibleBounds = visibleBoundsFor(candles, visible);
+    viewport.fitX(visibleBounds.x);
+    viewport.fitY(visibleBounds.y);
+
+    const chart = createChart(chartHost, candles, viewport);
+    const interaction = attachPointerInteraction({
+      canvas: chart.canvas,
+      viewport,
+      draw: chart.draw
+    });
+    interaction.setMode('navigation');
+
+    const fitVisiblePrice = () => {
+      const state = viewport.getState();
+      const shown = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
+      if (!shown.length) return;
+
+      viewport.fitY({
+        min: Math.min(...shown.map(c => c.low)),
+        max: Math.max(...shown.map(c => c.high))
+      });
+    };
+
+    const scaleCleanup = attachScaleToggle({
+      button: scaleButton,
+      viewport,
+      draw: chart.draw,
+      onScaleChanged: fitVisiblePrice
+    });
+    const fitCleanup = attachFitToggle({
+      button: fitButton,
+      viewport,
+      candles,
+      draw: chart.draw
+    });
+
+    active = { viewport, interaction, chart, scaleCleanup, fitCleanup, candles, symbol };
+    window.ochama = active;
+
+    chartHost.classList.remove('is-loading', 'is-error');
+    status.textContent = `${symbol} · ${candles.length} candles`;
+  }
+
+  assetSelect?.addEventListener('change', () => {
+    loadAsset(assetSelect.value).catch(error => {
+      console.error('[Ochama]', error);
+      chartHost.classList.remove('is-loading');
+      chartHost.classList.add('is-error');
+      status.textContent = `Erro: ${error?.message || 'falha desconhecida'}`;
+    });
   });
-  attachFitToggle({ button: fitButton, viewport, candles, draw: chart.draw });
 
-  chartHost.classList.remove('is-loading', 'is-error');
-  status.textContent = `BTC-USD · ${candles.length} candles`;
+  await loadAsset(assetSelect?.value || 'BTC-USD');
 }
 
 bootstrap().catch(error => {
