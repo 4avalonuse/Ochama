@@ -128,7 +128,9 @@ export async function bootstrap(){
       viewport,
       drawingManager,
       draw:chart.draw,
-      onChanged:drawingChanged
+      drawPreview:chart.setDrawingPreview,
+      onChanged:drawingChanged,
+      onComplete:()=>setToolbarMode('navigation')
     });
 
     activeDrawingInteraction=drawingInteraction;
@@ -282,8 +284,14 @@ export async function bootstrap(){
     refreshDrawingActions();
   };
 
-  drawingSelectButton?.addEventListener('click',()=>setToolbarMode('selection'));
-  drawingLineButton?.addEventListener('click',()=>setToolbarMode('drawing'));
+  drawingSelectButton?.addEventListener('click',()=>{
+    activeDrawingInteraction?.setTool('line');
+    setToolbarMode('selection');
+  });
+  drawingLineButton?.addEventListener('click',()=>{
+    activeDrawingInteraction?.setTool('line');
+    setToolbarMode('drawing');
+  });
   drawingNavButton?.addEventListener('click',()=>setToolbarMode('navigation'));
   drawingUndoButton?.addEventListener('click',()=>{
     if(active?.drawingManager?.undo()){
