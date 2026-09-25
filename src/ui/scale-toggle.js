@@ -6,14 +6,17 @@ export function attachScaleToggle({ button, viewport, draw, onScaleChanged = nul
     button.title = log ? 'Escala logarítmica' : 'Escala normal';
   }
 
-  button.addEventListener('click', () => {
+  const onClick = () => {
     const next = viewport.getYScaleType() === 'logarithmic' ? 'linear' : 'logarithmic';
     if (!viewport.setYScaleType(next)) return;
 
     if (typeof onScaleChanged === 'function') onScaleChanged();
     sync();
     draw();
-  });
+  };
 
+  button.addEventListener('click', onClick);
   sync();
+
+  return () => button.removeEventListener('click', onClick);
 }
