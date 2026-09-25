@@ -5,23 +5,27 @@ export function verticalTool() {
     type: 'vertical',
     defaults: {},
     create(point) {
-      return {
-        id: crypto.randomUUID(),
-        type: 'vertical',
-        point: { ...point }
-      };
+      return { id: crypto.randomUUID(), type: 'vertical', point: { ...point } };
     }
   };
 }
 
-export function verticalRenderer() {}
-export function verticalHitTest() { return false; }
+export function verticalRenderer(context, drawing, transform) {
+  const point = transform.marketToScreen(drawing.point);
+  if (!point) return;
+  context.save();
+  context.strokeStyle = '#60a5fa';
+  context.lineWidth = 1.5;
+  context.beginPath();
+  context.moveTo(point.x, 0);
+  context.lineTo(point.x, transform.plotBottom ?? context.canvas.height);
+  context.stroke();
+  context.restore();
+}
 
-registerDrawingTool({
-  type: 'vertical',
-  name: 'Vertical',
-  tool: verticalTool,
-  renderer: verticalRenderer,
-  hitTest: verticalHitTest,
-  defaults: {}
-});
+export function verticalHitTest(point, drawing, transform, tolerance = 6) {
+  const target = transform.marketToScreen(drawing.point);
+  return Boolean(target && Math.abs(point.x - target.x) <= tolerance);
+}
+
+registerDrawingTool({ type: 'vertical', name: 'Vertical', tool: verticalTool, renderer: verticalRenderer, hitTest: verticalHitTest, defaults: {} });
