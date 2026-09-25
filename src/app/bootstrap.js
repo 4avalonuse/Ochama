@@ -63,15 +63,6 @@ export async function bootstrap() {
 
   function optionsFor(symbol) { return { ...DATA_OPTIONS, symbol }; }
 
-  function showInfo(symbol, candles, meta) {
-    const latest = candles.at(-1);
-    const server = meta?.sourceName || meta?.provider || '—';
-    const refreshed = meta?.updatedAt;
-    status.textContent = latest
-      ? `${symbol} · ${formatPrice(latest.close)} · ${server} · ${formatRefresh(refreshed)}`
-      : `${symbol} · ${server} · sem candles`;
-  }
-
   async function loadAsset(symbol, result = null) {
     chartHost.classList.add('is-loading');
     chartHost.classList.remove('is-error');
@@ -120,7 +111,7 @@ export async function bootstrap() {
     window.ochama = active;
 
     chartHost.classList.remove('is-loading', 'is-error');
-    showInfo(symbol, candles, meta);
+    updateHeader(symbol, candles, meta);
   }
 
   assetSelect?.addEventListener('change', () => {
