@@ -9,6 +9,31 @@ import { attachFitToggle } from '../ui/fit-toggle.js';
 const API_BASE = 'https://oraculum-data-api.4avalonuse.workers.dev';
 const INITIAL_CANDLES = 120;
 
+function dataBoundsFor(candles) {
+  if (!candles.length) throw new Error('Nenhum candle disponível para o gráfico');
+
+  return {
+    x: { min: candles[0].timestamp, max: candles.at(-1).timestamp },
+    y: {
+      min: Math.min(...candles.map(c => c.low)),
+      max: Math.max(...candles.map(c => c.high))
+    }
+  };
+}
+
+function visibleBoundsFor(candles, visible) {
+  return {
+    x: {
+      min: visible[0]?.timestamp ?? candles[0].timestamp,
+      max: visible.at(-1)?.timestamp ?? candles.at(-1).timestamp
+    },
+    y: {
+      min: Math.min(...visible.map(c => c.low)),
+      max: Math.max(...visible.map(c => c.high))
+    }
+  };
+}
+
 export async function bootstrap() {
   const status = document.querySelector('#status');
   const chartHost = document.querySelector('#chart');
@@ -22,31 +47,30 @@ export async function bootstrap() {
 
   const raw = await dataClient.loadCandles({ provider: 'yahoo', symbol: 'BTC-USD', interval: '1d' });
   const candles = normalizeCandles(raw);
-  const dataBounds = {
-    x: { min: candles[0]?.timestamp ?? 0, max: candles.at(-1)?.timestamp ?? 0 },
-    y: { min: Math.min(...candles.map(c => c.low)), max: Math.max(...candles.map(c => c.high)) }
-  };
+  const dataBounds = dataBoundsFor(candles);
   viewport.setDataBounds(dataBounds);
 
   const visible = candles.slice(-Math.min(INITIAL_CANDLES, candles.length));
-  viewport.fitX({ min: visible[0]?.timestamp ?? dataBounds.x.min, max: visible.at(-1)?.timestamp ?? dataBounds.x.max });
-  viewport.fitY({ min: Math.min(...visible.map(c => c.low)), max: Math.max(...visible.map(c => c.high)) });
+  const visibleBounds = visibleBoundsFor(candles, visible);
+  viewport.fitX(visibleBounds.x);
+  viewport.fitY(visibleBounds.y);
 
   const chart = createChart(chartHost, candles, viewport);
   const interaction = attachPointerInteraction({ canvas: chart.canvas, viewport, draw: chart.draw });
-  // Navegação é o modo padrão; desenhos/seleção poderão assumir o dono
-  // do gesto sem criar listeners concorrentes.
   interaction.setMode('navigation');
   window.ochama = { viewport, interaction, chart };
+
   const fitVisiblePrice = () => {
     const state = viewport.getState();
     const shown = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
     if (!shown.length) return;
+
     viewport.fitY({
       min: Math.min(...shown.map(c => c.low)),
       max: Math.max(...shown.map(c => c.high))
     });
   };
+
   attachScaleToggle({
     button: scaleButton,
     viewport,
