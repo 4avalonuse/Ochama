@@ -25,12 +25,14 @@ export function createDrawingInteraction({
   let draftStart = null;
   let selectedId = null;
   let moving = null;
+  let movementRecorded = false;
 
   function setTool(type) {
     if (!getDrawingTool(type)) return false;
     activeTool = type;
     draftStart = null;
     moving = null;
+    movementRecorded = false;
     selectedId = null;
     return true;
   }
@@ -100,6 +102,7 @@ export function createDrawingInteraction({
       type: drawing.type,
       last: point
     };
+    movementRecorded = false;
   }
 
   function selectionMove(event) {
@@ -116,7 +119,8 @@ export function createDrawingInteraction({
     if (drawing && descriptor?.move) {
       const next = descriptor.move(drawing, { dx, dy }, transform);
       if (next) {
-        drawingManager.replace(drawing.id, next);
+        drawingManager.replace(drawing.id, next, !movementRecorded);
+        movementRecorded = true;
         moving.last = point;
         draw();
       }
@@ -132,6 +136,14 @@ export function createDrawingInteraction({
     setTool,
     getTool: () => activeTool,
     getSelectedId: () => selectedId,
+    deleteSelected() {
+      if (!selectedId) return false;
+      drawingManager.remove(selectedId);
+      selectedId = null;
+      draw();
+      onChanged?.();
+      return true;
+    },
     handlers: {
       onDrawingDown: drawingDown,
       onDrawingMove: drawingMove,
