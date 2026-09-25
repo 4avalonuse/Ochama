@@ -126,9 +126,7 @@ export async function bootstrap(){
       viewport,
       drawingManager,
       draw:chart.draw,
-      onChanged:()=>{
-        drawingPersistence.save(drawingManager.getDocument());
-      }
+      onChanged:drawingChanged
     });
 
     const interaction=attachPointerInteraction({
@@ -189,6 +187,7 @@ export async function bootstrap(){
     });
 
     window.ochama=active;
+    refreshDrawingActions();
     chartHost.classList.remove('is-loading','is-error');
     updateHeader(symbol,candles);
   }
@@ -261,9 +260,42 @@ export async function bootstrap(){
     drawingNavButton?.classList.toggle('is-active',mode==='navigation');
   };
 
+  const drawingUndoButton=document.querySelector('#drawing-undo');
+  const drawingRedoButton=document.querySelector('#drawing-redo');
+  const drawingDeleteButton=document.querySelector('#drawing-delete');
+
+  const refreshDrawingActions=()=>{
+    const manager=active?.drawingManager;
+    if(!manager) return;
+    if(drawingUndoButton) drawingUndoButton.disabled=!manager.canUndo();
+    if(drawingRedoButton) drawingRedoButton.disabled=!manager.canRedo();
+    if(drawingDeleteButton) drawingDeleteButton.disabled=!drawingInteraction?.getSelectedId?.();
+  };
+
+  const drawingChanged=()=>{
+    if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
+    active?.chart?.draw();
+    refreshDrawingActions();
+  };
+
   drawingSelectButton?.addEventListener('click',()=>setToolbarMode('selection'));
   drawingLineButton?.addEventListener('click',()=>setToolbarMode('drawing'));
   drawingNavButton?.addEventListener('click',()=>setToolbarMode('navigation'));
+  drawingUndoButton?.addEventListener('click',()=>{
+    if(active?.drawingManager?.undo()){
+      active.chart.draw();
+      drawingPersistence.save(active.drawingManager.getDocument());
+      refreshDrawingActions();
+    }
+  });
+  drawingRedoButton?.addEventListener('click',()=>{
+    if(active?.drawingManager?.redo()){
+      active.chart.draw();
+      drawingPersistence.save(active.drawingManager.getDocument());
+      refreshDrawingActions();
+    }
+  });
+  drawingDeleteButton?.addEventListener('click',()=>drawingInteraction?.deleteSelected?.());
   setToolbarMode('navigation');
 
   const savedSelection=stateStore.loadSelection();
