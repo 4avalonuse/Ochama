@@ -1,6 +1,7 @@
 #app{min-height:100vh;display:flex;flex-direction:column}
 .app-header{height:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;background:#11161d;border-bottom:1px solid #252c35}
 .app-brand{flex:0 0 auto;font-size:15px;font-weight:700;letter-spacing:.02em}
+.asset-select{min-width:108px;max-width:150px;height:32px;padding:0 8px;border:1px solid #343c48;border-radius:8px;background:#171d25;color:#e5e7eb;font-size:12px;font-weight:700}
 .app-actions{min-width:0;flex:1 1 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px}
 .app-status{min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#9ca3af;font-size:12px;text-align:right}
 .chart-shell{position:relative;flex:0 1 auto;width:100%;height:calc(100vh - 92px);max-height:720px;min-height:300px;background:#0b0f14;overflow:hidden}
@@ -11,6 +12,8 @@
 .scale-toggle[aria-pressed=true]{border-color:#64748b;color:#f8fafc;background:#202936}
 @media (max-width:420px){
   .app-header{gap:8px;padding:0 10px}
+  .app-brand{font-size:14px}
+  .asset-select{min-width:92px;max-width:118px;height:30px}
   .app-status{font-size:11px}
   .chart-shell{height:calc(100dvh - 120px);max-height:none;min-height:0}
   .chart-footer{position:fixed;left:0;right:0;bottom:0;z-index:20;height:44px;padding:0 10px}
