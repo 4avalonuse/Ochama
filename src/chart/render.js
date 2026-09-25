@@ -101,7 +101,7 @@ export function createChart(host, candles, viewport) {
   const canvas = document.createElement('canvas');
   canvas.className = 'chart-canvas';
   canvas.setAttribute('aria-label', 'Gráfico de candles BTC-USD');
-  host.replaceChildren(canvas);
+  host.prepend(canvas);
 
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D indisponível');
