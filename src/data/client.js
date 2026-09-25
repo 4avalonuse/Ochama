@@ -17,30 +17,36 @@ export function createDataClient(baseUrl) {
     return payload;
   }
 
+  async function findDataset({ provider, symbol, interval, currency = null, kind = 'ohlcv' }) {
+    const catalog = await request('/api/datasets');
+    if (!catalog?.ok || !Array.isArray(catalog.data)) throw new Error('Contrato do catálogo inválido');
+
+    const dataset = catalog.data.find(item =>
+      item?.provider === provider &&
+      item?.symbol === symbol &&
+      item?.interval === interval &&
+      item?.kind === kind &&
+      (currency == null || item?.currency === currency)
+    );
+    if (!dataset?.id) throw new Error(`Dataset não encontrado: ${provider}/${symbol}/${interval}`);
+    return dataset;
+  }
+
+  function unpack(payload, fallbackMeta) {
+    if (!payload?.ok || !Array.isArray(payload.data)) throw new Error('Contrato do dataset inválido');
+    return { candles: payload.data, meta: payload.meta || fallbackMeta };
+  }
+
   return {
-    async loadCandles({ provider, symbol, interval, currency = null, kind = 'ohlcv' }) {
-      const catalog = await request('/api/datasets');
-      if (!catalog?.ok || !Array.isArray(catalog.data)) {
-        throw new Error('Contrato do catálogo inválido');
-      }
-
-      const dataset = catalog.data.find(item =>
-        item?.provider === provider &&
-        item?.symbol === symbol &&
-        item?.interval === interval &&
-        item?.kind === kind &&
-        (currency == null || item?.currency === currency)
-      );
-
-      if (!dataset?.id) {
-        throw new Error(`Dataset não encontrado: ${provider}/${symbol}/${interval}`);
-      }
-
+    async loadCandles(options) {
+      const dataset = await findDataset(options);
       const payload = await request(`/api/datasets/${encodeURIComponent(dataset.id)}`);
-      if (!payload?.ok || !Array.isArray(payload.data)) {
-        throw new Error('Contrato do dataset inválido');
-      }
-      return payload.data;
+      return unpack(payload, dataset);
+    },
+    async refresh(options) {
+      const dataset = await findDataset(options);
+      const payload = await request(`/api/datasets/${encodeURIComponent(dataset.id)}/refresh`, { method: 'POST' });
+      return unpack(payload, dataset);
     }
   };
 }
