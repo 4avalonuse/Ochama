@@ -47,6 +47,7 @@ export async function bootstrap(){
     drawingPersistence=createDrawingPersistence();
 
   let active=null;
+  let activeDrawingInteraction=null;
 
   const PROVIDER_SYMBOLS={
     yahoo:{'BTC-USD':'BTC-USD','SOL-USD':'SOL-USD'},
@@ -92,6 +93,7 @@ export async function bootstrap(){
       active.fitCleanup?.();
       active.interaction.detach();
       active.chart.destroy();
+      activeDrawingInteraction=null;
     }
 
     const viewport=createViewport();
@@ -128,6 +130,8 @@ export async function bootstrap(){
       draw:chart.draw,
       onChanged:drawingChanged
     });
+
+    activeDrawingInteraction=drawingInteraction;
 
     const interaction=attachPointerInteraction({
       canvas:chart.canvas,
@@ -269,7 +273,7 @@ export async function bootstrap(){
     if(!manager) return;
     if(drawingUndoButton) drawingUndoButton.disabled=!manager.canUndo();
     if(drawingRedoButton) drawingRedoButton.disabled=!manager.canRedo();
-    if(drawingDeleteButton) drawingDeleteButton.disabled=!drawingInteraction?.getSelectedId?.();
+    if(drawingDeleteButton) drawingDeleteButton.disabled=!activeDrawingInteraction?.getSelectedId?.();
   };
 
   const drawingChanged=()=>{
@@ -295,7 +299,7 @@ export async function bootstrap(){
       refreshDrawingActions();
     }
   });
-  drawingDeleteButton?.addEventListener('click',()=>drawingInteraction?.deleteSelected?.());
+  drawingDeleteButton?.addEventListener('click',()=>activeDrawingInteraction?.deleteSelected?.());
   setToolbarMode('navigation');
 
   const savedSelection=stateStore.loadSelection();
