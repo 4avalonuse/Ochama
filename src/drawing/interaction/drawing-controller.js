@@ -28,6 +28,7 @@ export function createDrawingInteraction({
   let selectedId = null;
   let moving = null;
   let movementRecorded = false;
+  let drawingColor = '#60a5fa';
 
   function setTool(type) {
     if (!getDrawingTool(type)) return false;
@@ -152,6 +153,20 @@ export function createDrawingInteraction({
   return {
     setTool,
     getTool: () => activeTool,
+    getColor: () => drawingColor,
+    setColor(color) {
+      if (typeof color !== 'string' || !/^#[0-9a-f]{6}$/i.test(color)) return false;
+      drawingColor = color;
+      if (selectedId) {
+        const drawing = drawingManager.getDrawings().find(item => item.id === selectedId);
+        if (drawing) {
+          drawingManager.replace(selectedId, { ...drawing, color }, true);
+          draw();
+          onChanged?.();
+        }
+      }
+      return true;
+    },
     getSelectedId: () => selectedId,
     deleteSelected() {
       if (!selectedId) return false;
