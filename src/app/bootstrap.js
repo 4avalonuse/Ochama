@@ -273,6 +273,7 @@ export async function bootstrap(){
   const drawingUndoButton=document.querySelector('#drawing-undo');
   const drawingRedoButton=document.querySelector('#drawing-redo');
   const drawingDeleteButton=document.querySelector('#drawing-delete');
+  const drawingColorInput=document.querySelector('#drawing-color');
 
   const refreshDrawingActions=()=>{
     const manager=active?.drawingManager;
@@ -326,6 +327,7 @@ export async function bootstrap(){
     if(!window.confirm(`Apagar todos os ${count} desenhos?`)) return;
     activeDrawingInteraction?.clearAll?.();
   });
+  drawingColorInput?.addEventListener('input',()=>activeDrawingInteraction?.setColor(drawingColorInput.value));
   setToolbarMode('navigation');
 
   const savedSelection=stateStore.loadSelection();
