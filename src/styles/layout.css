@@ -12,6 +12,6 @@
 @media (max-width:420px){
   .app-header{gap:8px;padding:0 10px}
   .app-status{font-size:11px}
-  .chart-shell{height:calc(100vh - 92px)}
-  .chart-footer{padding:0 10px}
+  .chart-shell{height:calc(100dvh - 120px);max-height:none;min-height:0}
+  .chart-footer{position:fixed;left:0;right:0;bottom:0;z-index:20;height:44px;padding:0 10px}
 }
