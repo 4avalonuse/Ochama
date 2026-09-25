@@ -47,6 +47,11 @@ export function createDataClient(baseUrl) {
       const dataset = await findDataset(options);
       const payload = await request(`/api/datasets/${encodeURIComponent(dataset.id)}/refresh`, { method: 'POST' });
       return unpack(payload, dataset);
+    },
+    async loadOrPopulate(options) {
+      const loaded = await this.loadCandles(options);
+      if (loaded.candles.length) return loaded;
+      return this.refresh(options);
     }
   };
 }
