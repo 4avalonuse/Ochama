@@ -8,6 +8,7 @@ import { attachFitToggle } from '../ui/fit-toggle.js';
 import { createChartStateStore } from '../storage/chart-state.js';
 import { createDrawingManager } from '../drawing/core/drawing-manager.js';
 import { createDrawingPersistence } from '../drawing/storage/drawing-persistence.js';
+import { createDrawingInteraction } from '../drawing/interaction/drawing-controller.js';
 import '../drawing/tools/index.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
@@ -120,14 +121,36 @@ export async function bootstrap(){
       );
     };
 
+    const drawingInteraction=createDrawingInteraction({
+      canvas:chart.canvas,
+      viewport,
+      drawingManager,
+      draw:chart.draw,
+      onChanged:()=>{
+        drawingPersistence.save(drawingManager.getDocument());
+      }
+    });
+
     const interaction=attachPointerInteraction({
       canvas:chart.canvas,
       viewport,
       draw:chart.draw,
+      handlers:drawingInteraction.handlers,
       onViewportChanged:persist
     });
 
-    interaction.setMode('navigation');
+    const drawingSelectButton=document.querySelector('#drawing-select');
+    const drawingLineButton=document.querySelector('#drawing-line');
+
+    const setDrawingMode=(mode)=>{
+      interaction.setMode(mode);
+      drawingSelectButton?.classList.toggle('is-active',mode==='selection');
+      drawingLineButton?.classList.toggle('is-active',mode==='drawing');
+    };
+
+    drawingSelectButton?.addEventListener('click',()=>setDrawingMode('selection'));
+    drawingLineButton?.addEventListener('click',()=>setDrawingMode('drawing'));
+    setDrawingMode('drawing');
 
     const fitVisiblePrice=()=>{
       const state=viewport.getState(),
