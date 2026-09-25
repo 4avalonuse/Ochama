@@ -9,6 +9,7 @@ import { attachFitToggle } from '../ui/fit-toggle.js';
 const API_BASE = 'https://oraculum-data-api.4avalonuse.workers.dev';
 const INITIAL_CANDLES = 120;
 const DATA_OPTIONS = { provider: 'yahoo', interval: '1d', currency: 'USD' };
+const ASSET_NAMES = { 'BTC-USD': 'Bitcoin / USD', 'SOL-USD': 'Solana / USD' };
 
 function dataBoundsFor(candles) {
   if (!candles.length) throw new Error('Nenhum candle disponível para o gráfico');
@@ -27,8 +28,27 @@ function formatPrice(value) {
   return Number(value).toLocaleString('en-US', { maximumFractionDigits: value >= 100 ? 2 : 6 });
 }
 function formatRefresh(value) {
-  if (!value) return 'sem refresh';
+  if (!value) return '—';
   return new Date(Number(value)).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function updateHeader(symbol, candles, meta, loading = false) {
+  const latest = candles.at(-1);
+  const previous = candles.at(-2);
+  document.querySelector('#asset-symbol').textContent = symbol;
+  document.querySelector('#asset-name').textContent = ASSET_NAMES[symbol] || symbol;
+  document.querySelector('#asset-price').textContent = latest ? formatPrice(latest.close) : '—';
+  const change = latest && previous ? latest.close - previous.close : null;
+  const pct = latest && previous && previous.close ? (change / previous.close) * 100 : null;
+  const changeNode = document.querySelector('#asset-change');
+  changeNode.textContent = change == null ? '—' : `${change >= 0 ? '+' : ''}${formatPrice(change)} (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)`;
+  changeNode.classList.toggle('negative', change != null && change < 0);
+  document.querySelector('#data-source').textContent = meta?.sourceName || meta?.provider || '—';
+  document.querySelector('#data-refresh').textContent = formatRefresh(meta?.updatedAt);
+  const icon = document.querySelector('#asset-icon');
+  icon.className = `asset-icon ${symbol === 'SOL-USD' ? 'sol' : 'btc'}`;
+  icon.querySelector('span').textContent = symbol === 'SOL-USD' ? '' : '₿';
+  document.querySelector('#status').textContent = loading ? `Carregando ${symbol}…` : `${symbol} carregado`;
 }
 
 export async function bootstrap() {
