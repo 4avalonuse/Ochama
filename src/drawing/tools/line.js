@@ -7,11 +7,12 @@ export function lineTool() {
   return {
     type: 'line',
     defaults: {},
-    create(start, end, scaleType = 'linear') {
+    create(start, end, scaleType = 'linear', color = '#60a5fa') {
       return {
         id: crypto.randomUUID(),
         type: 'line',
         scaleType: normalizeScaleType(scaleType),
+        color,
         start: { ...start },
         end: { ...end }
       };
@@ -44,7 +45,7 @@ export function lineRenderer(context, drawing, transform) {
   if (!start || !end || points.length < 2) return;
 
   context.save();
-  context.strokeStyle = '#60a5fa';
+  context.strokeStyle = drawing.color || '#60a5fa';
   context.lineWidth = 2;
   context.beginPath();
   points.forEach((point, index) => {
@@ -53,7 +54,7 @@ export function lineRenderer(context, drawing, transform) {
   });
   context.stroke();
 
-  context.fillStyle = '#60a5fa';
+  context.fillStyle = drawing.color || '#60a5fa';
   for (const point of [start, end]) {
     context.beginPath();
     context.arc(point.x, point.y, 4, 0, Math.PI * 2);
