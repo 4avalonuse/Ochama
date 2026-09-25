@@ -18,16 +18,8 @@ export function createDataClient(baseUrl) {
   }
 
   return {
-    async listDatasets() {
-      const catalog = await request('/api/datasets');
-      if (!catalog?.ok || !Array.isArray(catalog.data)) {
-        throw new Error('Contrato do catálogo inválido');
-      }
-      return catalog.data;
-    },
-
     async loadCandles({ provider, symbol, interval, currency = null, kind = 'ohlcv' }) {
-      const catalog = await this.listDatasets();
+      const catalog = await request('/api/datasets');
       if (!catalog?.ok || !Array.isArray(catalog.data)) {
         throw new Error('Contrato do catálogo inválido');
       }
