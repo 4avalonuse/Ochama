@@ -1,17 +1,42 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ochama</title><link rel="stylesheet" href="./src/styles/app.css?v=20260924-3"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ochama</title><link rel="stylesheet" href="./src/styles/app.css?v=20260924-4"></head>
 <body>
 <main id="app">
-<header class="app-header">
-<strong class="app-brand">Ochama</strong>
-<div class="app-actions">
-<span id="status" class="app-status">Inicializando…</span>
-<button id="fit-toggle" class="fit-toggle" type="button">FIT</button>
-<button id="scale-toggle" class="scale-toggle" type="button" aria-pressed="false">NORMAL</button>
-</div>
-</header>
-<section id="chart" class="chart-shell" aria-label="Gráfico"></section>
+<section class="chart-card" aria-label="Gráfico">
+  <header class="chart-topbar">
+    <div class="chart-identity">
+      <button id="asset-toggle" class="chart-control chart-asset" type="button" aria-haspopup="listbox" aria-expanded="false">BTC-USD</button>
+      <span id="current-price" class="chart-price">—</span>
+      <div id="asset-menu" class="chart-menu" role="listbox" hidden></div>
+    </div>
+    <div class="chart-tools">
+      <button id="settings-toggle" class="chart-icon" type="button" aria-label="Configurações" aria-expanded="false">⚙</button>
+      <div id="settings-menu" class="settings-menu" hidden>
+        <div class="settings-title">Gráfico</div>
+        <label class="settings-row"><span>Touch</span><input id="touch-toggle" type="checkbox" checked></label>
+        <div class="settings-row settings-scale"><span>Escala</span><button id="scale-toggle" class="mini-toggle" type="button" aria-pressed="false">NORMAL</button></div>
+      </div>
+    </div>
+  </header>
+
+  <section id="chart" class="chart-shell">
+    <button id="fit-toggle" class="fit-toggle" type="button" aria-label="Ajustar gráfico">FIT</button>
+    <div id="status" class="chart-status" aria-live="polite">Inicializando…</div>
+  </section>
+
+  <footer class="chart-bottombar">
+    <nav id="intervals" class="interval-menu" aria-label="Período">
+      <button type="button" data-interval="1m">m</button>
+      <button type="button" data-interval="1h">h</button>
+      <button type="button" data-interval="1d" class="active">d</button>
+      <button type="button" data-interval="1w">w</button>
+      <button type="button" data-interval="1M">M</button>
+    </nav>
+    <button id="log-toggle" class="bottom-action" type="button" aria-expanded="false">LOG</button>
+  </footer>
+  <div id="log-panel" class="log-panel" hidden></div>
+</section>
 </main>
-<script type="module" src="./src/app/bootstrap.js?v=20260924-3"></script>
+<script type="module" src="./src/app/bootstrap.js?v=20260924-4"></script>
 </body></html>
