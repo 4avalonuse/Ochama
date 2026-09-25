@@ -71,16 +71,29 @@ export function lineHitTestPart(point, drawing, transform) {
 }
 
 export function lineHitTest(point, drawing, transform, tolerance = 8) {
-  const start = transform.marketToScreen(drawing.start);
-  const end = transform.marketToScreen(drawing.end);
-  if (!start || !end) return false;
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const lengthSq = dx * dx + dy * dy;
-  const t = lengthSq
-    ? Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSq))
-    : 0;
-  return Math.hypot(point.x - (start.x + t * dx), point.y - (start.y + t * dy)) <= tolerance;
+  const scaleType = normalizeScaleType(drawing.scaleType);
+  const segments = 40;
+  let previous = null;
+
+  for (let i = 0; i <= segments; i += 1) {
+    const t = i / segments;
+    const scaledStart = toScaleValue(drawing.start.price, scaleType);
+    const scaledEnd = toScaleValue(drawing.end.price, scaleType);
+    const price = fromScaleValue(scaledStart + (scaledEnd - scaledStart) * t, scaleType);
+    const timestamp = drawing.start.timestamp + (drawing.end.timestamp - drawing.start.timestamp) * t;
+    const current = transform.marketToScreen({ timestamp, price });
+    if (previous && current) {
+      const dx = current.x - previous.x;
+      const dy = current.y - previous.y;
+      const lengthSq = dx * dx + dy * dy;
+      const u = lengthSq
+        ? Math.max(0, Math.min(1, ((point.x - previous.x) * dx + (point.y - previous.y) * dy) / lengthSq))
+        : 0;
+      if (Math.hypot(point.x - (previous.x + u * dx), point.y - (previous.y + u * dy)) <= tolerance) return true;
+    }
+    previous = current;
+  }
+  return false;
 }
 
 export function lineMove(drawing, delta, transform, part = 'body') {
