@@ -161,6 +161,16 @@ export function createDrawingInteraction({
       onChanged?.();
       return true;
     },
+    clearAll() {
+      const cleared = drawingManager.clear();
+      if (!cleared) return false;
+      selectedId = null;
+      moving = null;
+      movementRecorded = false;
+      draw();
+      onChanged?.();
+      return true;
+    },
     handlers: {
       onDrawingDown: drawingDown,
       onDrawingMove: drawingMove,
