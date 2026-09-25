@@ -34,4 +34,28 @@ export function lineHitTest(point, drawing, transform, tolerance = 6) {
   return Math.hypot(point.x - (start.x + t * dx), point.y - (start.y + t * dy)) <= tolerance;
 }
 
-registerDrawingTool({ type: 'line', name: 'Linha', tool: lineTool, renderer: lineRenderer, hitTest: lineHitTest, defaults: {} });
+export function lineMove(drawing, delta, transform) {
+  const start = transform.marketToScreen(drawing.start);
+  const end = transform.marketToScreen(drawing.end);
+  if (!start || !end) return null;
+
+  const nextStart = transform.screenToMarket({ x: start.x + delta.dx, y: start.y + delta.dy });
+  const nextEnd = transform.screenToMarket({ x: end.x + delta.dx, y: end.y + delta.dy });
+  if (!nextStart || !nextEnd) return null;
+
+  return {
+    ...drawing,
+    start: nextStart,
+    end: nextEnd
+  };
+}
+
+registerDrawingTool({
+  type: 'line',
+  name: 'Linha',
+  tool: lineTool,
+  renderer: lineRenderer,
+  hitTest: lineHitTest,
+  move: lineMove,
+  defaults: {}
+});
