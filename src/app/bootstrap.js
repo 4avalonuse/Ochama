@@ -6,6 +6,9 @@ import { attachPointerInteraction } from '../interaction/pointer.js';
 import { attachScaleToggle } from '../ui/scale-toggle.js';
 import { attachFitToggle } from '../ui/fit-toggle.js';
 import { createChartStateStore } from '../storage/chart-state.js';
+import { createDrawingManager } from '../drawing/core/drawing-manager.js';
+import { createDrawingPersistence } from '../drawing/storage/drawing-persistence.js';
+import '../drawing/tools/index.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const INITIAL_CANDLES=120;
@@ -39,7 +42,8 @@ export async function bootstrap(){
     providerSelect=document.querySelector('#provider-select'),
     intervalSelect=document.querySelector('#interval-select'),
     dataClient=createDataClient(API_BASE),
-    stateStore=createChartStateStore();
+    stateStore=createChartStateStore(),
+    drawingPersistence=createDrawingPersistence();
 
   let active=null;
 
@@ -78,6 +82,8 @@ export async function bootstrap(){
       meta=loaded.meta;
 
     saveActiveState();
+
+    const savedDrawings=drawingPersistence.load({symbol,provider,interval});
 
     if(active){
       active.scaleCleanup?.();
@@ -148,6 +154,8 @@ export async function bootstrap(){
       onViewportChanged:persist
     });
 
+    const drawingManager=createDrawingManager({symbol,provider,interval,drawings:savedDrawings.drawings});
+
     active={
       viewport,
       interaction,
@@ -158,7 +166,8 @@ export async function bootstrap(){
       symbol,
       provider,
       interval,
-      meta
+      meta,
+      drawingManager
     };
 
     stateStore.saveSelection({
@@ -220,7 +229,10 @@ export async function bootstrap(){
     }
   });
 
-  window.addEventListener('pagehide',saveActiveState);
+  window.addEventListener('pagehide',()=>{
+    saveActiveState();
+    if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
+  });
 
   document.querySelector('#config-button')?.addEventListener('click',()=>{
     status.textContent='Configurações: em breve'
