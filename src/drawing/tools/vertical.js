@@ -4,7 +4,7 @@ export function verticalTool() {
   return {
     type: 'vertical',
     defaults: {},
-    create(point) {
+    create(point, _unused = null, _scaleType = 'linear', color = '#60a5fa') {
       return { id: crypto.randomUUID(), type: 'vertical', point: { ...point } };
     }
   };
@@ -14,7 +14,7 @@ export function verticalRenderer(context, drawing, transform) {
   const point = transform.marketToScreen(drawing.point);
   if (!point) return;
   context.save();
-  context.strokeStyle = '#60a5fa';
+  context.strokeStyle = drawing.color || '#60a5fa';
   context.lineWidth = 1.5;
   context.beginPath();
   context.moveTo(point.x, transform.plotTop ?? 0);
