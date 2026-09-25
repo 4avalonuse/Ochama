@@ -139,18 +139,7 @@ export async function bootstrap(){
       onViewportChanged:persist
     });
 
-    const drawingSelectButton=document.querySelector('#drawing-select');
-    const drawingLineButton=document.querySelector('#drawing-line');
-
-    const setDrawingMode=(mode)=>{
-      interaction.setMode(mode);
-      drawingSelectButton?.classList.toggle('is-active',mode==='selection');
-      drawingLineButton?.classList.toggle('is-active',mode==='drawing');
-    };
-
-    drawingSelectButton?.addEventListener('click',()=>setDrawingMode('selection'));
-    drawingLineButton?.addEventListener('click',()=>setDrawingMode('drawing'));
-    setDrawingMode('drawing');
+    interaction.setMode('navigation');
 
     const fitVisiblePrice=()=>{
       const state=viewport.getState(),
@@ -260,6 +249,22 @@ export async function bootstrap(){
   document.querySelector('#config-button')?.addEventListener('click',()=>{
     status.textContent='Configurações: em breve'
   });
+
+  const drawingSelectButton=document.querySelector('#drawing-select');
+  const drawingLineButton=document.querySelector('#drawing-line');
+  const drawingNavButton=document.querySelector('#drawing-nav');
+
+  const setToolbarMode=(mode)=>{
+    active?.interaction?.setMode(mode);
+    drawingSelectButton?.classList.toggle('is-active',mode==='selection');
+    drawingLineButton?.classList.toggle('is-active',mode==='drawing');
+    drawingNavButton?.classList.toggle('is-active',mode==='navigation');
+  };
+
+  drawingSelectButton?.addEventListener('click',()=>setToolbarMode('selection'));
+  drawingLineButton?.addEventListener('click',()=>setToolbarMode('drawing'));
+  drawingNavButton?.addEventListener('click',()=>setToolbarMode('navigation'));
+  setToolbarMode('navigation');
 
   const savedSelection=stateStore.loadSelection();
 
