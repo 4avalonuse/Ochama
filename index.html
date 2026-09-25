@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ochama</title><link rel="stylesheet" href="./src/styles/app.css?v=20260925-8"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ochama</title><link rel="stylesheet" href="./src/styles/app.css?v=20260925-11"></head>
 <body><main id="app">
 <header class="app-header"><div class="app-brand">OCHAMA</div><div class="market-header">
 <select id="asset-select" class="asset-select" aria-label="Ativo"><option value="BTC-USD" selected>BTCUSD</option><option value="SOL-USD">SOLUSD</option></select>
@@ -12,9 +12,15 @@
 <section id="chart" class="chart-shell" aria-label="Gráfico">
 <button id="fit-toggle" class="fit-toggle" type="button">FIT</button>
 <div class="drawing-toolbar" aria-label="Ferramentas de desenho">
-<button id="drawing-nav" class="drawing-tool is-active" type="button">PAN</button><button id="drawing-select" class="drawing-tool" type="button">SELECT</button>
-<button id="drawing-line" class="drawing-tool is-active" type="button">LINE</button>
+<button id="drawing-nav" class="drawing-tool is-active" type="button">PAN</button>
+<button id="drawing-select" class="drawing-tool" type="button">SELECT</button>
+<button id="drawing-line" class="drawing-tool" type="button">LINE</button>
+<button id="drawing-horizontal" class="drawing-tool" type="button">H</button>
+<button id="drawing-vertical" class="drawing-tool" type="button">V</button>
+<button id="drawing-undo" class="drawing-tool" type="button">↶</button>
+<button id="drawing-redo" class="drawing-tool" type="button">↷</button>
+<button id="drawing-delete" class="drawing-tool" type="button">DEL</button>
 </div>
 </section>
 <footer class="chart-footer"><button id="scale-toggle" class="scale-toggle" type="button" aria-pressed="false">NORMAL</button></footer>
-</main><script type="module" src="./src/app/bootstrap.js?v=20260925-8"></script></body></html>
+</main><script type="module" src="./src/app/bootstrap.js?v=20260925-11"></script></body></html>
