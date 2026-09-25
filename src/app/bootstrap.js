@@ -107,7 +107,7 @@ export async function bootstrap(){
 
     const persist=()=>{
       stateStore.save(
-        {symbol,provider,interval:DATA_OPTIONS.interval},
+        {symbol,provider,interval},
         viewport.getState()
       );
     };
