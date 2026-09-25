@@ -53,6 +53,8 @@ export async function bootstrap() {
   let viewport = createViewport();
   let chart = null;
   let interaction = null;
+  let cleanupScale = null;
+  let cleanupFit = null;
 
   const load = async () => {
     chartHost.classList.add('is-loading');
@@ -76,7 +78,9 @@ export async function bootstrap() {
     interaction = attachPointerInteraction({ canvas: chart.canvas, viewport, draw: chart.draw });
     interaction.setMode('navigation');
 
-    attachScaleToggle({
+    cleanupScale?.();
+    cleanupFit?.();
+    cleanupScale = attachScaleToggle({
       button: scaleButton,
       viewport,
       draw: chart.draw,
@@ -86,7 +90,7 @@ export async function bootstrap() {
         if (shown.length) viewport.fitY({ min: Math.min(...shown.map(c => c.low)), max: Math.max(...shown.map(c => c.high)) });
       }
     });
-    attachFitToggle({ button: fitButton, viewport, candles, draw: chart.draw });
+    cleanupFit = attachFitToggle({ button: fitButton, viewport, candles, draw: chart.draw });
 
     document.querySelector('#current-price').textContent = formatPrice(candles.at(-1)?.close);
     status.textContent = `${state.symbol} · ${candles.length} candles`;
