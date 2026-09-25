@@ -82,6 +82,7 @@ export async function bootstrap(){
       meta=loaded.meta;
 
     saveActiveState();
+    if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
 
     const savedDrawings=drawingPersistence.load({symbol,provider,interval});
 
