@@ -258,12 +258,16 @@ export async function bootstrap(){
   const drawingSelectButton=document.querySelector('#drawing-select');
   const drawingLineButton=document.querySelector('#drawing-line');
   const drawingNavButton=document.querySelector('#drawing-nav');
+  const drawingHorizontalButton=document.querySelector('#drawing-horizontal');
+  const drawingVerticalButton=document.querySelector('#drawing-vertical');
 
   const setToolbarMode=(mode)=>{
     active?.interaction?.setMode(mode);
     drawingSelectButton?.classList.toggle('is-active',mode==='selection');
     drawingLineButton?.classList.toggle('is-active',mode==='drawing');
     drawingNavButton?.classList.toggle('is-active',mode==='navigation');
+    drawingHorizontalButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='horizontal');
+    drawingVerticalButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='vertical');
   };
 
   const drawingUndoButton=document.querySelector('#drawing-undo');
@@ -293,6 +297,14 @@ export async function bootstrap(){
     setToolbarMode('drawing');
   });
   drawingNavButton?.addEventListener('click',()=>setToolbarMode('navigation'));
+  drawingHorizontalButton?.addEventListener('click',()=>{
+    activeDrawingInteraction?.setTool('horizontal');
+    setToolbarMode('drawing');
+  });
+  drawingVerticalButton?.addEventListener('click',()=>{
+    activeDrawingInteraction?.setTool('vertical');
+    setToolbarMode('drawing');
+  });
   drawingUndoButton?.addEventListener('click',()=>{
     if(active?.drawingManager?.undo()){
       active.chart.draw();
