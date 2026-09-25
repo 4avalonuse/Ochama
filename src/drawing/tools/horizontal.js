@@ -4,8 +4,8 @@ export function horizontalTool() {
   return {
     type: 'horizontal',
     defaults: {},
-    create(point) {
-      return { id: crypto.randomUUID(), type: 'horizontal', point: { ...point } };
+    create(point, _unused = null, _scaleType = 'linear', color = '#60a5fa') {
+      return { id: crypto.randomUUID(), type: 'horizontal', point: { ...point }, color };
     }
   };
 }
@@ -14,7 +14,7 @@ export function horizontalRenderer(context, drawing, transform) {
   const point = transform.marketToScreen(drawing.point);
   if (!point) return;
   context.save();
-  context.strokeStyle = '#60a5fa';
+  context.strokeStyle = drawing.color || '#60a5fa';
   context.lineWidth = 1.5;
   context.beginPath();
   context.moveTo(transform.plotLeft ?? 0, point.y);
