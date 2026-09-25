@@ -1,4 +1,4 @@
-export function attachFitToggle({ button, viewport, candles, draw, longPressMs = 550 }) {
+export function attachFitToggle({ button, viewport, candles, draw, onViewportChanged = null, longPressMs = 550 }) {
   let timer = null;
   let longPressed = false;
 
@@ -12,11 +12,13 @@ export function attachFitToggle({ button, viewport, candles, draw, longPressMs =
       max: Math.max(...shown.map(c => c.high))
     });
     draw();
+    onViewportChanged?.();
   }
 
   function fitAll() {
     viewport.fitAll();
     draw();
+    onViewportChanged?.();
   }
 
   function cancelTimer() {
