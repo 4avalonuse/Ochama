@@ -1,12 +1,16 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ochama</title><link rel="stylesheet" href="./src/styles/app.css?v=20260924-5"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ochama</title><link rel="stylesheet" href="./src/styles/app.css?v=20260924-6"></head>
 <body>
 <main id="app">
 <header class="app-header">
 <strong class="app-brand">Ochama</strong>
 <div class="app-actions">
-<span id="status" class="app-status">Inicializando…</span>
+<div class="market-menu" aria-label="Mercado">
+<strong id="asset-name">BTC-USD</strong>
+<span id="asset-price">—</span>
+<span id="asset-timeframe">1D</span>
+</div>
 </div>
 </header>
 <section id="chart" class="chart-shell" aria-label="Gráfico">
@@ -16,5 +20,5 @@
 <button id="scale-toggle" class="scale-toggle" type="button" aria-pressed="false">NORMAL</button>
 </footer>
 </main>
-<script type="module" src="./src/app/bootstrap.js?v=20260924-5"></script>
+<script type="module" src="./src/app/bootstrap.js?v=20260924-6"></script>
 </body></html>
