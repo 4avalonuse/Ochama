@@ -46,7 +46,7 @@ test('time viewport respects bounds', () => {
 
 test('normalizer rejects empty, malformed and duplicate data', () => {
   assert.throws(() => normalizeCandles([]), /Nenhum candle/);
-  assert.throws(() => normalizeCandles([{ timestamp: 1, open: 1, high: 2, low: 0, close: 1 }]), /Candle inválido/);
+  assert.throws(() => normalizeCandles([{ timestamp: 1, open: 1, high: 0.5, low: 1, close: 1 }]), /Candle inválido/);
   const candle = { timestamp: 1, open: 1, high: 2, low: 1, close: 1, volume: 0 };
   assert.throws(() => normalizeCandles([candle, candle]), /Candle duplicado/);
 });
