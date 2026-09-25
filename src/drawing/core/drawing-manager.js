@@ -26,6 +26,11 @@ export function createDrawingManager({ symbol, provider, interval, drawings = []
     remove(id) {
       setDrawings(document.drawings.filter(item => item.id !== id));
     },
+    clear() {
+      if (!document.drawings.length) return false;
+      setDrawings([]);
+      return true;
+    },
     replace(id, drawing, record = true) {
       if (!getDrawingTool(drawing?.type)) throw new Error(`Drawing tool desconhecida: ${drawing?.type}`);
       setDrawings(document.drawings.map(item => item.id === id ? drawing : item), record);
