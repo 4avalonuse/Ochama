@@ -1,11 +1,18 @@
 import { registerDrawingTool } from '../core/drawing-registry.js';
+import { toScaleValue, fromScaleValue, normalizeScaleType } from '../../viewport/scale.js';
 
 export function lineTool() {
   return {
     type: 'line',
     defaults: {},
-    create(start, end) {
-      return { id: crypto.randomUUID(), type: 'line', start: { ...start }, end: { ...end } };
+    create(start, end, scaleType = 'linear') {
+      return {
+        id: crypto.randomUUID(),
+        type: 'line',
+        scaleType: normalizeScaleType(scaleType),
+        start: { ...start },
+        end: { ...end }
+      };
     }
   };
 }
@@ -24,12 +31,25 @@ export function lineRenderer(context, drawing, transform) {
   const end = transform.marketToScreen(drawing.end);
   if (!start || !end) return;
 
+  const scaleType = normalizeScaleType(drawing.scaleType);
+  const segments = 40;
   context.save();
   context.strokeStyle = '#60a5fa';
   context.lineWidth = 2;
   context.beginPath();
-  context.moveTo(start.x, start.y);
-  context.lineTo(end.x, end.y);
+
+  for (let i = 0; i <= segments; i += 1) {
+    const t = i / segments;
+    const scaledStart = toScaleValue(drawing.start.price, scaleType);
+    const scaledEnd = toScaleValue(drawing.end.price, scaleType);
+    const scaledPrice = scaledStart + (scaledEnd - scaledStart) * t;
+    const price = fromScaleValue(scaledPrice, scaleType);
+    const timestamp = drawing.start.timestamp + (drawing.end.timestamp - drawing.start.timestamp) * t;
+    const screen = transform.marketToScreen({ timestamp, price });
+    if (!screen) continue;
+    if (i === 0) context.moveTo(screen.x, screen.y);
+    else context.lineTo(screen.x, screen.y);
+  }
   context.stroke();
 
   context.fillStyle = '#60a5fa';
@@ -42,7 +62,12 @@ export function lineRenderer(context, drawing, transform) {
 }
 
 export function lineHitTestPart(point, drawing, transform) {
-  return endpoint(point, drawing, transform);
+  const start = transform.marketToScreen(drawing.start);
+  const end = transform.marketToScreen(drawing.end);
+  if (!start || !end) return null;
+  if (Math.hypot(point.x - start.x, point.y - start.y) <= 11) return 'start';
+  if (Math.hypot(point.x - end.x, point.y - end.y) <= 11) return 'end';
+  return null;
 }
 
 export function lineHitTest(point, drawing, transform, tolerance = 8) {
