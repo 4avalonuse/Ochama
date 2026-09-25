@@ -110,7 +110,8 @@ export async function bootstrap(){
 
     if(savedState)viewport.setState(savedState);
 
-    const chart=createChart(chartHost,candles,viewport);
+    const drawingManager=createDrawingManager({symbol,provider,interval,drawings:savedDrawings.drawings});
+    const chart=createChart(chartHost,candles,viewport,drawingManager);
 
     const persist=()=>{
       stateStore.save(
@@ -154,8 +155,6 @@ export async function bootstrap(){
       draw:chart.draw,
       onViewportChanged:persist
     });
-
-    const drawingManager=createDrawingManager({symbol,provider,interval,drawings:savedDrawings.drawings});
 
     active={
       viewport,
