@@ -39,7 +39,6 @@ export async function bootstrap() {
   const chartHost = document.querySelector('#chart');
   const scaleButton = document.querySelector('#scale-toggle');
   const fitButton = document.querySelector('#fit-toggle');
-  const assetPrice = document.querySelector('#asset-price');
   const dataClient = createDataClient(API_BASE);
   const viewport = createViewport();
 
@@ -48,10 +47,6 @@ export async function bootstrap() {
 
   const raw = await dataClient.loadCandles({ provider: 'yahoo', symbol: 'BTC-USD', interval: '1d' });
   const candles = normalizeCandles(raw);
-  const lastCandle = candles.at(-1);
-  if (assetPrice && lastCandle) {
-    assetPrice.textContent = Number(lastCandle.close).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
   const dataBounds = dataBoundsFor(candles);
   viewport.setDataBounds(dataBounds);
 
