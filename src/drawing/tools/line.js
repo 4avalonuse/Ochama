@@ -38,7 +38,7 @@ function linePoints(drawing, transform) {
   return points;
 }
 
-export function lineRenderer(context, drawing, transform) {
+export function lineRenderer(context, drawing, transform, options = {}) {
   const start = transform.marketToScreen(drawing.start);
   const end = transform.marketToScreen(drawing.end);
   const points = linePoints(drawing, transform);
@@ -46,7 +46,7 @@ export function lineRenderer(context, drawing, transform) {
 
   context.save();
   context.strokeStyle = drawing.color || '#60a5fa';
-  context.lineWidth = 2;
+  context.lineWidth = options.selected ? 3.5 : 2;
   context.beginPath();
   points.forEach((point, index) => {
     if (index === 0) context.moveTo(point.x, point.y);
@@ -57,8 +57,13 @@ export function lineRenderer(context, drawing, transform) {
   context.fillStyle = drawing.color || '#60a5fa';
   for (const point of [start, end]) {
     context.beginPath();
-    context.arc(point.x, point.y, 4, 0, Math.PI * 2);
+    context.arc(point.x, point.y, options.selected ? 7 : 4, 0, Math.PI * 2);
     context.fill();
+    if (options.selected) {
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 2;
+      context.stroke();
+    }
   }
   context.restore();
 }
