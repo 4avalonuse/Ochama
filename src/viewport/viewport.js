@@ -1,24 +1,7 @@
 import { createBounds } from './bounds.js';
-import { panTime, zoomTime, fitTime } from './time-scale.js';
+import { panTime, zoomTime, fitTime, expandTimeBounds } from './time-scale.js';
 import { normalizeScaleType } from './scale.js';
 import { YViewport } from './y-viewport.js';
-
-function clampY(range, bounds, yViewport) {
-  const min = Number(bounds?.min), max = Number(bounds?.max);
-  if (!yViewport.validRange(min, max)) return range;
-  const a = yViewport.type === 'logarithmic' ? Math.log(min) : min;
-  const b = yViewport.type === 'logarithmic' ? Math.log(max) : max;
-  let rMin = yViewport.type === 'logarithmic' ? Math.log(range.min) : range.min;
-  let rMax = yViewport.type === 'logarithmic' ? Math.log(range.max) : range.max;
-  if (![a, b, rMin, rMax].every(Number.isFinite) || !(rMax > rMin)) return { min, max };
-  const span = rMax - rMin;
-  if (span >= b - a) return { min, max };
-  if (rMin < a) { rMin = a; rMax = a + span; }
-  if (rMax > b) { rMax = b; rMin = b - span; }
-  return yViewport.type === 'logarithmic'
-    ? { min: Math.exp(rMin), max: Math.exp(rMax) }
-    : { min: rMin, max: rMax };
-}
 
 function validRange(range) {
   return Number.isFinite(range?.min) && Number.isFinite(range?.max) && range.max > range.min;
@@ -42,15 +25,11 @@ export function createViewport() {
       const x = { min: Number(next?.x?.min), max: Number(next?.x?.max) };
       const y = { min: Number(next?.y?.min), max: Number(next?.y?.max) };
       if (!validRange(x) || !validRange(y)) return false;
-
       const nextScale = next?.yScaleType ? normalizeScaleType(next.yScaleType) : yViewport.type;
       const b = bounds.get();
       if (nextScale === 'logarithmic' && (b.y.min <= 0 || b.y.max <= 0)) return false;
-
       yViewport.setType(nextScale);
-      range = { x, y };
-      range.y = clampY(range.y, b.y, yViewport);
-      range.x = panTime(range.x, 0, b.x);
+      range = { x: panTime(x, 0, expandTimeBounds(b.x)), y: yViewport.constrain(y, b.y) };
       return true;
     },
     getYScaleType() { return yViewport.type; },
@@ -58,15 +37,16 @@ export function createViewport() {
       const next = normalizeScaleType(type), b = bounds.get();
       if (next === 'logarithmic' && (b.y.min <= 0 || b.y.max <= 0)) return false;
       yViewport.setType(next);
+      range.y = yViewport.constrain(range.y, b.y);
       return true;
     },
-    panX(delta) { range.x = panTime(range.x, delta, bounds.get().x); },
+    panX(delta) { range.x = panTime(range.x, delta, expandTimeBounds(bounds.get().x)); },
     zoomX(factor, anchor) { range.x = zoomTime(range.x, factor, anchor, bounds.get().x); },
-    panY(delta) { range.y = yViewport.pan(range.y, delta); range.y = clampY(range.y, bounds.get().y, yViewport); },
-    panYByPixels(pixels, plotHeight) { range.y = yViewport.panPixels(range.y, pixels, plotHeight); range.y = clampY(range.y, bounds.get().y, yViewport); },
-    zoomY(factor, anchor) { range.y = yViewport.zoom(range.y, factor, anchor); range.y = clampY(range.y, bounds.get().y, yViewport); },
+    panY(delta) { range.y = yViewport.constrain(yViewport.pan(range.y, delta), bounds.get().y); },
+    panYByPixels(pixels, plotHeight) { range.y = yViewport.constrain(yViewport.panPixels(range.y, pixels, plotHeight), bounds.get().y); },
+    zoomY(factor, anchor) { range.y = yViewport.constrain(yViewport.zoom(range.y, factor, anchor), bounds.get().y); },
     fitX(target) { range.x = fitTime(target, bounds.get().x); },
-    fitY(target) { range.y = yViewport.fit(target); range.y = clampY(range.y, bounds.get().y, yViewport); },
+    fitY(target) { range.y = yViewport.constrain(yViewport.fit(target), bounds.get().y); },
     fitAll() { const b = bounds.get(); range = { x: { ...b.x }, y: { ...b.y } }; },
     priceAtYRatio(ratio) { return yViewport.valueAtRatio(range.y, ratio); }
   };
