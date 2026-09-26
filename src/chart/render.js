@@ -2,6 +2,7 @@ import { normalizeScaleType, toScaleValue, fromScaleValue } from '../viewport/sc
 import { createPlotGeometry } from './plot-geometry.js';
 import { createDrawingTransform } from '../drawing/render/transform.js';
 import { createDrawingRenderer } from '../drawing/render/drawing-renderer.js';
+import { calculateMovingAverage } from '../indicators/moving-average.js';
 
 function finite(value) {
   return Number.isFinite(value);
@@ -98,6 +99,46 @@ function drawCandles(ctx, candles, state, plot) {
 
   ctx.restore();
 }
+function drawMovingAverages(ctx, candles, state, plot, movingAverages) {
+  const visible = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
+  if (!visible.length || !movingAverages.length) return;
+
+  const palette = ['#f59e0b','#a78bfa','#22d3ee','#fb7185','#4ade80','#f472b6'];
+  const xSpan = state.x.max - state.x.min || 1;
+
+  ctx.save();
+  ctx.lineWidth = 1.7;
+  ctx.lineJoin = 'round';
+
+  movingAverages.forEach((config,index) => {
+    const calculated = calculateMovingAverage(candles, config);
+    const color = palette[index % palette.length];
+    let started = false;
+
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+
+    candles.forEach((candle,i) => {
+      const value = calculated.values[i];
+      if (!Number.isFinite(value) || candle.timestamp < state.x.min || candle.timestamp > state.x.max) return;
+      const ratio = yRatio(value, state.y.min, state.y.max, state.yScaleType);
+      if (!Number.isFinite(ratio)) return;
+      const x = plot.left + ((candle.timestamp - state.x.min) / xSpan) * plot.width;
+      const y = plot.top + (1 - ratio) * plot.height;
+      if (!started) {
+        ctx.moveTo(x,y);
+        started = true;
+      } else {
+        ctx.lineTo(x,y);
+      }
+    });
+
+    if (started) ctx.stroke();
+  });
+
+  ctx.restore();
+}
+
 function drawLine(ctx, candles, state, plot) {
   const visible = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
   if (visible.length < 2) return;
@@ -138,6 +179,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
   let drawingPreview = null;
   let selectedDrawingId = null;
   let chartType = 'candle';
+  let movingAverages = [];
 
   function resize() {
     const rect = host.getBoundingClientRect();
@@ -165,6 +207,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     drawGrid(ctx, width, height, plot, state.y.min, state.y.max, normalizeScaleType(state.yScaleType));
     if (chartType === 'line') drawLine(ctx, candles, state, plot);
     else drawCandles(ctx, candles, state, plot);
+    drawMovingAverages(ctx, candles, state, plot, movingAverages);
 
     if (drawingManager) {
       const transform = createDrawingTransform({ viewport, plot });
@@ -175,6 +218,11 @@ export function createChart(host, candles, viewport, drawingManager = null) {
 
   function setChartType(type) {
     chartType = type === 'line' ? 'line' : 'candle';
+    draw();
+  }
+
+  function setMovingAverages(next) {
+    movingAverages = Array.isArray(next) ? next.map(item => ({ ...item })) : [];
     draw();
   }
 
@@ -198,6 +246,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     setDrawingPreview,
     setSelectedDrawingId,
     setChartType,
+    setMovingAverages,
     destroy() {
       observer.disconnect();
       canvas.remove();
