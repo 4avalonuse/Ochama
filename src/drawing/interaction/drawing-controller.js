@@ -30,6 +30,7 @@ export function createDrawingInteraction({
   let moving = null;
   let movementRecorded = false;
   let drawingColor = '#60a5fa';
+  let fibonacciMode = 'retracement';
 
   function syncSelection() {
     drawSelection?.(selectedId);
@@ -68,7 +69,7 @@ export function createDrawingInteraction({
 
     draftStart = market;
     const descriptor = getDrawingTool(activeTool);
-    const preview = descriptor?.tool?.().create?.(market, market, viewport.getYScaleType(), drawingColor);
+    const preview = descriptor?.tool?.().create?.(market, market, viewport.getYScaleType(), drawingColor, { mode: fibonacciMode });
     if (preview) drawPreview?.(preview);
   }
 
@@ -80,7 +81,7 @@ export function createDrawingInteraction({
     if (!market) return;
 
     const descriptor = getDrawingTool(activeTool);
-    const preview = descriptor?.tool?.().create?.(draftStart, market, viewport.getYScaleType(), drawingColor);
+    const preview = descriptor?.tool?.().create?.(draftStart, market, viewport.getYScaleType(), drawingColor, { mode: fibonacciMode });
     if (preview) drawPreview?.(preview);
   }
 
@@ -95,7 +96,7 @@ export function createDrawingInteraction({
     if (!end) return;
 
     const descriptor = getDrawingTool(activeTool);
-    const drawing = descriptor?.tool?.().create?.(start, end, viewport.getYScaleType(), drawingColor);
+    const drawing = descriptor?.tool?.().create?.(start, end, viewport.getYScaleType(), drawingColor, { mode: fibonacciMode });
     if (!drawing) return;
 
     drawingManager.add(drawing);
@@ -162,6 +163,11 @@ export function createDrawingInteraction({
     setTool,
     getTool: () => activeTool,
     getColor: () => drawingColor,
+    getFibonacciMode: () => fibonacciMode,
+    setFibonacciMode(mode) {
+      fibonacciMode = mode === 'extension' ? 'extension' : 'retracement';
+      return fibonacciMode;
+    },
     setColor(color) {
       if (typeof color !== 'string' || !/^#[0-9a-f]{6}$/i.test(color)) return false;
       drawingColor = color;
