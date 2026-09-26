@@ -109,6 +109,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
   const drawingRenderer = createDrawingRenderer();
   if (!ctx) throw new Error('Canvas 2D indisponível');
   let drawingPreview = null;
+  let selectedDrawingId = null;
 
   function resize() {
     const rect = host.getBoundingClientRect();
@@ -143,6 +144,11 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     }
   }
 
+  function setSelectedDrawingId(id) {
+    selectedDrawingId = id || null;
+    draw();
+  }
+
   function setDrawingPreview(drawing) {
     drawingPreview = drawing || null;
     draw();
@@ -156,6 +162,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     canvas,
     draw,
     setDrawingPreview,
+    setSelectedDrawingId,
     destroy() {
       observer.disconnect();
       canvas.remove();
