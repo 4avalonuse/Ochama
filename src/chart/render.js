@@ -111,8 +111,9 @@ function drawMovingAverages(ctx, candles, state, plot, movingAverages) {
   ctx.lineJoin = 'round';
 
   movingAverages.forEach((config,index) => {
+    if (config.visible === false) return;
     const calculated = calculateMovingAverage(candles, config);
-    const color = palette[index % palette.length];
+    const color = /^#[0-9a-fA-F]{6}$/.test(config.color || '') ? config.color : palette[index % palette.length];
     let started = false;
 
     ctx.strokeStyle = color;
