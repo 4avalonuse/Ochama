@@ -62,7 +62,7 @@ export function createDrawingInteraction({
 
     draftStart = market;
     const descriptor = getDrawingTool(activeTool);
-    const preview = descriptor?.tool?.().create?.(market, market, viewport.getYScaleType());
+    const preview = descriptor?.tool?.().create?.(market, market, viewport.getYScaleType(), drawingColor);
     if (preview) drawPreview?.(preview);
   }
 
@@ -74,7 +74,7 @@ export function createDrawingInteraction({
     if (!market) return;
 
     const descriptor = getDrawingTool(activeTool);
-    const preview = descriptor?.tool?.().create?.(draftStart, market, viewport.getYScaleType());
+    const preview = descriptor?.tool?.().create?.(draftStart, market, viewport.getYScaleType(), drawingColor);
     if (preview) drawPreview?.(preview);
   }
 
@@ -89,7 +89,7 @@ export function createDrawingInteraction({
     if (!end) return;
 
     const descriptor = getDrawingTool(activeTool);
-    const drawing = descriptor?.tool?.().create?.(start, end, viewport.getYScaleType());
+    const drawing = descriptor?.tool?.().create?.(start, end, viewport.getYScaleType(), drawingColor);
     if (!drawing) return;
 
     drawingManager.add(drawing);
