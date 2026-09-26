@@ -42,6 +42,7 @@ export async function bootstrap(){
     assetSelect=document.querySelector('#asset-select'),
     providerSelect=document.querySelector('#provider-select'),
     intervalSelect=document.querySelector('#interval-select'),
+    chartTypeButton=document.querySelector('#chart-type-toggle'),
     dataClient=createDataClient(API_BASE),
     stateStore=createChartStateStore(),
     drawingPersistence=createDrawingPersistence();
@@ -115,6 +116,7 @@ export async function bootstrap(){
 
     const drawingManager=createDrawingManager({symbol,provider,interval,drawings:savedDrawings.drawings});
     const chart=createChart(chartHost,candles,viewport,drawingManager);
+    chart.setChartType(chartTypeButton?.getAttribute('aria-pressed') === 'true' ? 'line' : 'candle');
 
     const persist=()=>{
       stateStore.save(
@@ -198,6 +200,14 @@ export async function bootstrap(){
     chartHost.classList.remove('is-loading','is-error');
     updateHeader(symbol,candles);
   }
+
+  chartTypeButton?.addEventListener('click',()=>{
+    const isLine=chartTypeButton.getAttribute('aria-pressed')==='true';
+    const next=isLine?'candle':'line';
+    chartTypeButton.setAttribute('aria-pressed',String(next==='line'));
+    chartTypeButton.textContent=next==='line'?'LINE':'CANDLE';
+    active?.chart?.setChartType(next);
+  });
 
   assetSelect?.addEventListener('change',()=>{
     syncProviders();
