@@ -129,6 +129,7 @@ export async function bootstrap(){
       drawingManager,
       draw:chart.draw,
       drawPreview:chart.setDrawingPreview,
+      drawSelection:chart.setSelectedDrawingId,
       onChanged:drawingChanged,
       onComplete:()=>setToolbarMode('navigation')
     });
@@ -320,10 +321,72 @@ export async function bootstrap(){
       refreshDrawingActions();
     }
   });
+  let deleteHoldTimer = null;
+  let deleteHoldTriggered = false;
+
+  const confirmClearAllDrawings=()=>{
+    if(!active?.drawingManager?.getDrawings?.().length) return false;
+    if(!window.confirm('Apagar todos os desenhos?')) return false;
+    return activeDrawingInteraction?.clearAll?.() || false;
+  };
+
   drawingDeleteButton?.addEventListener('click',()=>{
+    if(deleteHoldTriggered){
+      deleteHoldTriggered=false;
+      return;
+    }
     if(!activeDrawingInteraction?.getSelectedId?.()) return;
     activeDrawingInteraction.deleteSelected();
   });
+
+  const startDeleteHold=()=>{
+    if(deleteHoldTimer) return;
+    deleteHoldTriggered=false;
+    deleteHoldTimer=window.setTimeout(()=>{
+      deleteHoldTimer=null;
+      deleteHoldTriggered=true;
+      confirmClearAllDrawings();
+    },700);
+  };
+
+  const cancelDeleteHold=()=>{
+    if(deleteHoldTimer){
+      window.clearTimeout(deleteHoldTimer);
+      deleteHoldTimer=null;
+    }
+  };
+
+  drawingDeleteButton?.addEventListener('pointerdown',startDeleteHold);
+  drawingDeleteButton?.addEventListener('pointerup',cancelDeleteHold);
+  drawingDeleteButton?.addEventListener('pointercancel',cancelDeleteHold);
+  drawingDeleteButton?.addEventListener('pointerleave',cancelDeleteHold);
+
+  let deleteKeyTimer = null;
+  let deleteKeyTriggered = false;
+
+  window.addEventListener('keydown',(event)=>{
+    if(event.key!=='Delete' || event.repeat) return;
+    if(event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) return;
+    deleteKeyTriggered=false;
+    deleteKeyTimer=window.setTimeout(()=>{
+      deleteKeyTimer=null;
+      deleteKeyTriggered=true;
+      confirmClearAllDrawings();
+    },700);
+  });
+
+  window.addEventListener('keyup',(event)=>{
+    if(event.key!=='Delete') return;
+    if(deleteKeyTimer){
+      window.clearTimeout(deleteKeyTimer);
+      deleteKeyTimer=null;
+    }
+    if(!deleteKeyTriggered){
+      if(activeDrawingInteraction?.getSelectedId?.()) activeDrawingInteraction.deleteSelected();
+    }
+    deleteKeyTriggered=false;
+  });
+
   drawingColorInput?.addEventListener('input',()=>activeDrawingInteraction?.setColor(drawingColorInput.value));
   setToolbarMode('navigation');
 
