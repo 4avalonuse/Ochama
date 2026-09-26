@@ -1,6 +1,6 @@
 import { normalizeScaleType, toScaleValue, fromScaleValue, valueAtRatio } from './scale.js';
 
-const OVERSCROLL_FACTOR = 1;
+const OVERSCROLL_FACTOR = 2;
 
 export class YViewport {
   constructor(type = 'linear') {
