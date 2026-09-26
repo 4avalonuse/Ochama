@@ -40,6 +40,8 @@ export function normalizeMovingAverage(config={}){
     type,
     source,
     period,
+    color:typeof config.color==='string'&&/^#[0-9a-fA-F]{6}$/.test(config.color)?config.color:'#f59e0b',
+    visible:config.visible!==false,
     label:typeof config.label==='string'&&config.label.trim()?config.label.trim():`${type.toUpperCase()} ${period}`
   };
 }
