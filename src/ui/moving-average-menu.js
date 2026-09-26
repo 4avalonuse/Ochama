@@ -28,7 +28,11 @@ export function attachMovingAverageMenu({button,onChange}){
   const sourceInput=menu.querySelector('[data-ma-source]');
   const addButton=menu.querySelector('[data-ma-add]');
   const list=menu.querySelector('[data-ma-list]');
-  let items=[];
+  let items=[
+    normalizeMovingAverage({type:'sma',period:8,source:'close'}),
+    normalizeMovingAverage({type:'ema',period:13,source:'close'}),
+    normalizeMovingAverage({type:'sma',period:21,source:'close'})
+  ];
 
   function emit(){
     onChange?.(items.map(item=>({...item})));
@@ -99,6 +103,7 @@ export function attachMovingAverageMenu({button,onChange}){
   document.addEventListener('pointerdown',onDocumentPointerDown);
 
   renderList();
+  emit();
 
   return ()=>{
     button.removeEventListener('click',toggle);
