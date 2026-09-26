@@ -21,7 +21,8 @@ export function createDrawingInteraction({
   draw,
   drawPreview = null,
   onChanged = null,
-  onComplete = null
+  onComplete = null,
+  drawSelection = null
 }) {
   let activeTool = 'line';
   let draftStart = null;
@@ -30,6 +31,10 @@ export function createDrawingInteraction({
   let movementRecorded = false;
   let drawingColor = '#60a5fa';
 
+  function syncSelection() {
+    drawSelection?.(selectedId);
+  }
+
   function setTool(type) {
     if (!getDrawingTool(type)) return false;
     activeTool = type;
@@ -37,6 +42,7 @@ export function createDrawingInteraction({
     moving = null;
     movementRecorded = false;
     selectedId = null;
+    syncSelection();
     drawPreview?.(null);
     return true;
   }
@@ -94,6 +100,7 @@ export function createDrawingInteraction({
 
     drawingManager.add(drawing);
     selectedId = drawing.id;
+    syncSelection();
     draw();
     onChanged?.();
     onComplete?.();
@@ -103,6 +110,7 @@ export function createDrawingInteraction({
     const point = pointFromEvent(event, canvas);
     const hit = selectAt(point);
     selectedId = hit?.drawing?.id || null;
+    syncSelection();
     if (!hit?.drawing) {
       moving = null;
       draw();
@@ -172,6 +180,7 @@ export function createDrawingInteraction({
       if (!selectedId) return false;
       drawingManager.remove(selectedId);
       selectedId = null;
+      syncSelection();
       draw();
       onChanged?.();
       return true;
@@ -180,6 +189,7 @@ export function createDrawingInteraction({
       const cleared = drawingManager.clear();
       if (!cleared) return false;
       selectedId = null;
+      syncSelection();
       moving = null;
       movementRecorded = false;
       draw();
