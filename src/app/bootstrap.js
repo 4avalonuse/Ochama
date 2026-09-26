@@ -11,6 +11,7 @@ import { createDrawingPersistence } from '../drawing/storage/drawing-persistence
 import { createDrawingInteraction } from '../drawing/interaction/drawing-controller.js';
 import '../drawing/tools/index.js';
 import { attachMovingAverageMenu } from '../ui/moving-average-menu.js';
+import { attachFibonacciMenu } from '../ui/fibonacci-menu.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const INITIAL_CANDLES=120;
@@ -272,6 +273,7 @@ export async function bootstrap(){
 
   window.addEventListener('pagehide',()=>{
     movingAverageCleanup?.();
+    fibonacciMenuCleanup?.();
     saveActiveState();
     if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
   });
@@ -296,6 +298,15 @@ export async function bootstrap(){
     drawingVerticalButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='vertical');
     drawingFibonacciButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='fibonacci');
   };
+
+  const fibonacciMenuCleanup=attachFibonacciMenu({
+    button:drawingFibonacciButton,
+    onModeChange:(mode)=>activeDrawingInteraction?.setFibonacciMode?.(mode),
+    onActivate:()=>{
+      activeDrawingInteraction?.setTool('fibonacci');
+      setToolbarMode('drawing');
+    }
+  });
 
   const drawingUndoButton=document.querySelector('#drawing-undo');
   const drawingRedoButton=document.querySelector('#drawing-redo');
@@ -331,10 +342,6 @@ export async function bootstrap(){
   });
   drawingVerticalButton?.addEventListener('click',()=>{
     activeDrawingInteraction?.setTool('vertical');
-    setToolbarMode('drawing');
-  });
-  drawingFibonacciButton?.addEventListener('click',()=>{
-    activeDrawingInteraction?.setTool('fibonacci');
     setToolbarMode('drawing');
   });
   drawingUndoButton?.addEventListener('click',()=>{
