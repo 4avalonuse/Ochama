@@ -271,6 +271,7 @@ export async function bootstrap(){
   const drawingNavButton=document.querySelector('#drawing-nav');
   const drawingHorizontalButton=document.querySelector('#drawing-horizontal');
   const drawingVerticalButton=document.querySelector('#drawing-vertical');
+  const drawingFibonacciButton=document.querySelector('#drawing-fibonacci');
 
   const setToolbarMode=(mode)=>{
     active?.interaction?.setMode(mode);
@@ -279,6 +280,7 @@ export async function bootstrap(){
     drawingNavButton?.classList.toggle('is-active',mode==='navigation');
     drawingHorizontalButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='horizontal');
     drawingVerticalButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='vertical');
+    drawingFibonacciButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='fibonacci');
   };
 
   const drawingUndoButton=document.querySelector('#drawing-undo');
@@ -315,6 +317,10 @@ export async function bootstrap(){
   });
   drawingVerticalButton?.addEventListener('click',()=>{
     activeDrawingInteraction?.setTool('vertical');
+    setToolbarMode('drawing');
+  });
+  drawingFibonacciButton?.addEventListener('click',()=>{
+    activeDrawingInteraction?.setTool('fibonacci');
     setToolbarMode('drawing');
   });
   drawingUndoButton?.addEventListener('click',()=>{
