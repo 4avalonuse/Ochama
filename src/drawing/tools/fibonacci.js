@@ -2,7 +2,7 @@ import { registerDrawingTool } from '../core/drawing-registry.js';
 import { fromScaleValue, normalizeScaleType, toScaleValue } from '../../viewport/scale.js';
 import { distancePointToSegment } from '../render/geometry.js';
 
-export const FIBONACCI_LEVELS = Object.freeze([
+export const FIBONACCI_RETRACEMENT_LEVELS = Object.freeze([
   { value: 0, label: '0%' },
   { value: 0.236, label: '23.6%' },
   { value: 0.382, label: '38.2%' },
@@ -12,31 +12,65 @@ export const FIBONACCI_LEVELS = Object.freeze([
   { value: 1, label: '100%' }
 ]);
 
+export const FIBONACCI_EXTENSION_LEVELS = Object.freeze([
+  { value: 0, label: '0%' },
+  { value: 0.618, label: '61.8%' },
+  { value: 1, label: '100%' },
+  { value: 1.272, label: '127.2%' },
+  { value: 1.414, label: '141.4%' },
+  { value: 1.618, label: '161.8%' },
+  { value: 2, label: '200%' },
+  { value: 2.618, label: '261.8%' },
+  { value: 4.236, label: '423.6%' }
+]);
+
+export const FIBONACCI_LEVELS = FIBONACCI_RETRACEMENT_LEVELS;
+export const FIBONACCI_MODES = Object.freeze({
+  RETRACEMENT: 'retracement',
+  EXTENSION: 'extension'
+});
+
+function levelsForMode(mode) {
+  return mode === FIBONACCI_MODES.EXTENSION
+    ? FIBONACCI_EXTENSION_LEVELS
+    : FIBONACCI_RETRACEMENT_LEVELS;
+}
+
 export function fibonacciTool() {
   return {
     type: 'fibonacci',
-    defaults: { levels: FIBONACCI_LEVELS.map(level => level.value) },
-    create(start, end, scaleType = 'linear', color = '#60a5fa') {
+    defaults: {
+      mode: FIBONACCI_MODES.RETRACEMENT,
+      levels: FIBONACCI_RETRACEMENT_LEVELS.map(level => level.value)
+    },
+    create(start, end, scaleType = 'linear', color = '#60a5fa', options = {}) {
+      const mode = options?.mode === FIBONACCI_MODES.EXTENSION
+        ? FIBONACCI_MODES.EXTENSION
+        : FIBONACCI_MODES.RETRACEMENT;
+      const levels = levelsForMode(mode);
+
       return {
         id: crypto.randomUUID(),
         type: 'fibonacci',
         scaleType: normalizeScaleType(scaleType),
         color,
+        mode,
         start: { ...start },
         end: { ...end },
-        levels: FIBONACCI_LEVELS.map(level => level.value)
+        levels: levels.map(level => level.value)
       };
     }
   };
 }
 
 function levelsFor(drawing) {
+  const catalog = levelsForMode(drawing?.mode);
   const allowed = new Set(
-    Array.isArray(drawing.levels)
+    Array.isArray(drawing?.levels)
       ? drawing.levels.map(Number).filter(Number.isFinite)
-      : FIBONACCI_LEVELS.map(level => level.value)
+      : catalog.map(level => level.value)
   );
-  return FIBONACCI_LEVELS.filter(level => allowed.has(level.value));
+  return catalog.filter(level => allowed.has(level.value));
 }
 
 function levelPrice(drawing, level) {
@@ -51,12 +85,18 @@ function screenSegments(drawing, transform) {
   const start = transform.marketToScreen(drawing.start);
   const end = transform.marketToScreen(drawing.end);
   if (!start || !end) return [];
-  const levels = levelsFor(drawing);
-  return levels.map(level => {
+
+  return levelsFor(drawing).map(level => {
     const price = levelPrice(drawing, level.value);
     if (!Number.isFinite(price)) return null;
-    const left = transform.marketToScreen({ timestamp: drawing.start.timestamp, price });
-    const right = transform.marketToScreen({ timestamp: drawing.end.timestamp, price });
+    const left = transform.marketToScreen({
+      timestamp: drawing.start.timestamp,
+      price
+    });
+    const right = transform.marketToScreen({
+      timestamp: drawing.end.timestamp,
+      price
+    });
     if (!left || !right) return null;
     return { ...level, price, left, right };
   }).filter(Boolean);
@@ -82,11 +122,17 @@ export function fibonacciRenderer(context, drawing, transform, options = {}) {
     context.lineTo(segment.right.x, segment.right.y);
     context.stroke();
 
-    const label = segment.label;
-    const labelX = Math.min(segment.right.x + 6, (transform.plotRight ?? context.canvas.width) - 42);
+    const labelX = Math.min(
+      segment.right.x + 6,
+      (transform.plotRight ?? context.canvas.width) - 42
+    );
     context.globalAlpha = options.selected ? 1 : 0.82;
     context.fillStyle = drawing.color || '#60a5fa';
-    context.fillText(label, Math.max(segment.left.x + 3, labelX), segment.left.y);
+    context.fillText(
+      segment.label,
+      Math.max(segment.left.x + 3, labelX),
+      segment.left.y
+    );
   }
 
   context.setLineDash([]);
@@ -126,10 +172,12 @@ export function fibonacciHitTest(point, drawing, transform, tolerance = 8) {
   for (const segment of screenSegments(drawing, transform)) {
     if (distancePointToSegment(point, segment.left, segment.right) <= tolerance) return true;
   }
-  return distancePointToSegment(point,
-    transform.marketToScreen(drawing.start),
-    transform.marketToScreen(drawing.end)
-  ) <= tolerance;
+
+  const start = transform.marketToScreen(drawing.start);
+  const end = transform.marketToScreen(drawing.end);
+  if (!start || !end) return false;
+
+  return distancePointToSegment(point, start, end) <= tolerance;
 }
 
 export function fibonacciMove(drawing, delta, transform, part = 'body') {
