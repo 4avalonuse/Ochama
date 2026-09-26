@@ -23,6 +23,7 @@ export function attachFibonacciMenu({ button, onActivate, onModeChange }) {
   let mode = 'retracement';
   let longPressTimer = null;
   let longPress = false;
+  let suppressClick = false;
 
   const setOpen = open => {
     menu.hidden = !open;
@@ -49,6 +50,7 @@ export function attachFibonacciMenu({ button, onActivate, onModeChange }) {
     window.clearTimeout(longPressTimer);
     longPressTimer = window.setTimeout(() => {
       longPress = true;
+      suppressClick = true;
       setOpen(true);
     }, 520);
   };
@@ -60,16 +62,17 @@ export function attachFibonacciMenu({ button, onActivate, onModeChange }) {
 
   const finishPointer = event => {
     cancelLongPress();
-    if (longPress) {
-      event.preventDefault();
-      longPress = false;
-      return;
-    }
-    activate(event);
+    if (longPress) event.preventDefault();
   };
 
   const onMouseClick = event => {
-    if (event.detail > 0) activate(event);
+    if (suppressClick) {
+      suppressClick = false;
+      longPress = false;
+      event.preventDefault();
+      return;
+    }
+    activate(event);
   };
 
   const onDocumentPointerDown = event => {
