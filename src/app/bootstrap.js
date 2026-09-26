@@ -10,6 +10,7 @@ import { createDrawingManager } from '../drawing/core/drawing-manager.js';
 import { createDrawingPersistence } from '../drawing/storage/drawing-persistence.js';
 import { createDrawingInteraction } from '../drawing/interaction/drawing-controller.js';
 import '../drawing/tools/index.js';
+import { attachMovingAverageMenu } from '../ui/moving-average-menu.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const INITIAL_CANDLES=120;
@@ -43,12 +44,14 @@ export async function bootstrap(){
     providerSelect=document.querySelector('#provider-select'),
     intervalSelect=document.querySelector('#interval-select'),
     chartTypeButton=document.querySelector('#chart-type-toggle'),
+    movingAverageButton=document.querySelector('#moving-average-button'),
     dataClient=createDataClient(API_BASE),
     stateStore=createChartStateStore(),
     drawingPersistence=createDrawingPersistence();
 
   let active=null;
   let activeDrawingInteraction=null;
+  let movingAverageConfigs=[];
 
   const PROVIDER_SYMBOLS={
     yahoo:{'BTC-USD':'BTC-USD','SOL-USD':'SOL-USD'},
@@ -117,6 +120,7 @@ export async function bootstrap(){
     const drawingManager=createDrawingManager({symbol,provider,interval,drawings:savedDrawings.drawings});
     const chart=createChart(chartHost,candles,viewport,drawingManager);
     chart.setChartType(chartTypeButton?.getAttribute('aria-pressed') === 'true' ? 'line' : 'candle');
+    chart.setMovingAverages(movingAverageConfigs);
 
     const persist=()=>{
       stateStore.save(
@@ -201,6 +205,15 @@ export async function bootstrap(){
     updateHeader(symbol,candles);
   }
 
+  const movingAverageCleanup=attachMovingAverageMenu({
+    button:movingAverageButton,
+    onChange:(configs)=>{
+      movingAverageConfigs=configs;
+      active?.chart?.setMovingAverages(configs);
+      movingAverageButton?.setAttribute('aria-expanded','true');
+    }
+  });
+
   chartTypeButton?.addEventListener('click',()=>{
     const isLine=chartTypeButton.getAttribute('aria-pressed')==='true';
     const next=isLine?'candle':'line';
@@ -258,6 +271,7 @@ export async function bootstrap(){
   });
 
   window.addEventListener('pagehide',()=>{
+    movingAverageCleanup?.();
     saveActiveState();
     if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
   });
