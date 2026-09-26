@@ -1,3 +1,12 @@
+const OVERSCROLL_FACTOR = 1;
+
+export function expandTimeBounds(bounds, factor = OVERSCROLL_FACTOR) {
+  const min = Number(bounds?.min), max = Number(bounds?.max);
+  if (![min, max].every(Number.isFinite) || !(max > min)) return { min, max };
+  const margin = (max - min) * Math.max(0, Number(factor) || 0);
+  return { min: min - margin, max: max + margin };
+}
+
 export function panTime(range, delta, bounds) {
   const span = range.max - range.min;
   const next = { min: range.min + delta, max: range.max + delta };
@@ -18,7 +27,12 @@ export function zoomTime(range, factor, anchor, bounds) {
     min: anchor - (anchor - range.min) * factor,
     max: anchor + (range.max - anchor) * factor
   };
-  return panTime(next, 0, bounds);
+  const limits = expandTimeBounds(bounds);
+  const span = next.max - next.min;
+  if (Number.isFinite(limits.min) && Number.isFinite(limits.max) && span > limits.max - limits.min) {
+    return { min: limits.min, max: limits.max };
+  }
+  return panTime(next, 0, limits);
 }
 
 export function fitTime(target, bounds) {
