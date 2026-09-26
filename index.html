@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ochama</title><link rel="stylesheet" href="./src/styles/app.css?v=20260925-11"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ochama</title><link rel="stylesheet" href="./src/styles/app.css?v=20260926-01"></head>
 <body><main id="app">
 <header class="app-header"><div class="app-brand">OCHAMA</div><div class="market-header">
 <select id="asset-select" class="asset-select" aria-label="Ativo"><option value="BTC-USD" selected>BTCUSD</option><option value="SOL-USD">SOLUSD</option></select>
 <span id="asset-price" class="asset-price">—</span>
 <select id="interval-select" class="interval-select" aria-label="Intervalo"><option value="1m">m</option><option value="1h">h</option><option value="1d" selected>D</option><option value="1w">W</option><option value="1M">M</option></select>
-<select id="provider-select" class="provider-select" aria-label="Servidor"><option value="yahoo" selected>Yahoo</option><option value="binance-us">Binance.US</option></select>
+<button id="chart-type-toggle" class="chart-type-toggle" type="button" aria-pressed="false">CANDLE</button><select id="provider-select" class="provider-select" aria-label="Servidor"><option value="yahoo" selected>Yahoo</option><option value="binance-us">Binance.US</option></select>
 <button id="refresh-data" class="header-action" type="button" aria-label="Atualizar dados">↻</button><button id="config-button" class="header-action" type="button" aria-label="Configurações">⚙</button></div>
 <span id="status" class="app-status" aria-live="polite">Inicializando…</span></header>
 <section id="chart" class="chart-shell" aria-label="Gráfico">
