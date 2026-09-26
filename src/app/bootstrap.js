@@ -321,11 +321,8 @@ export async function bootstrap(){
     }
   });
   drawingDeleteButton?.addEventListener('click',()=>{
-    const manager=active?.drawingManager;
-    const count=manager?.getDrawings?.().length||0;
-    if(!count) return;
-    if(!window.confirm(`Apagar todos os ${count} desenhos?`)) return;
-    activeDrawingInteraction?.clearAll?.();
+    if(!activeDrawingInteraction?.getSelectedId?.()) return;
+    activeDrawingInteraction.deleteSelected();
   });
   drawingColorInput?.addEventListener('input',()=>activeDrawingInteraction?.setColor(drawingColorInput.value));
   setToolbarMode('navigation');
