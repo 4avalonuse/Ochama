@@ -74,15 +74,20 @@ export function attachMovingAverageMenu({button,onChange}){
     emit();
   }
 
+  function setOpen(open){
+    menu.hidden=!open;
+    button.setAttribute('aria-expanded',String(open));
+  }
+
   function toggle(event){
     event.stopPropagation();
-    menu.hidden=!menu.hidden;
+    setOpen(menu.hidden);
   }
 
   function onDocumentPointerDown(event){
     if(menu.hidden) return;
     if(event.target===button||menu.contains(event.target)) return;
-    menu.hidden=true;
+    setOpen(false);
   }
 
   button.addEventListener('click',toggle);
