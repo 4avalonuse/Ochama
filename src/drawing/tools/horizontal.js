@@ -10,16 +10,25 @@ export function horizontalTool() {
   };
 }
 
-export function horizontalRenderer(context, drawing, transform) {
+export function horizontalRenderer(context, drawing, transform, options = {}) {
   const point = transform.marketToScreen(drawing.point);
   if (!point) return;
   context.save();
   context.strokeStyle = drawing.color || '#60a5fa';
-  context.lineWidth = 1.5;
+  context.lineWidth = options.selected ? 3 : 1.5;
   context.beginPath();
   context.moveTo(transform.plotLeft ?? 0, point.y);
   context.lineTo(transform.plotRight ?? context.canvas.width, point.y);
   context.stroke();
+  if (options.selected) {
+    context.fillStyle = drawing.color || '#60a5fa';
+    context.beginPath();
+    context.arc(point.x, point.y, 7, 0, Math.PI * 2);
+    context.fill();
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 2;
+    context.stroke();
+  }
   context.restore();
 }
 
