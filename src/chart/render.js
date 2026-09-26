@@ -98,6 +98,33 @@ function drawCandles(ctx, candles, state, plot) {
 
   ctx.restore();
 }
+function drawLine(ctx, candles, state, plot) {
+  const visible = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
+  if (visible.length < 2) return;
+
+  const xSpan = state.x.max - state.x.min || 1;
+  ctx.save();
+  ctx.strokeStyle = '#dbe4ee';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  let started = false;
+  visible.forEach(candle => {
+    const ratio = yRatio(candle.close, state.y.min, state.y.max, state.yScaleType);
+    if (!Number.isFinite(ratio)) return;
+    const x = plot.left + ((candle.timestamp - state.x.min) / xSpan) * plot.width;
+    const y = plot.top + (1 - ratio) * plot.height;
+    if (!started) {
+      ctx.moveTo(x, y);
+      started = true;
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+
+  if (started) ctx.stroke();
+  ctx.restore();
+}
 
 export function createChart(host, candles, viewport, drawingManager = null) {
   const canvas = document.createElement('canvas');
@@ -110,6 +137,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
   if (!ctx) throw new Error('Canvas 2D indisponível');
   let drawingPreview = null;
   let selectedDrawingId = null;
+  let chartType = 'candle';
 
   function resize() {
     const rect = host.getBoundingClientRect();
@@ -135,13 +163,19 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     const plot = createPlotGeometry(width, height);
 
     drawGrid(ctx, width, height, plot, state.y.min, state.y.max, normalizeScaleType(state.yScaleType));
-    drawCandles(ctx, candles, state, plot);
+    if (chartType === 'line') drawLine(ctx, candles, state, plot);
+    else drawCandles(ctx, candles, state, plot);
 
     if (drawingManager) {
       const transform = createDrawingTransform({ viewport, plot });
-      drawingRenderer.render(ctx, drawingManager.getDrawings(), transform);
+      drawingRenderer.render(ctx, drawingManager.getDrawings(), transform, selectedDrawingId);
       if (drawingPreview) drawingRenderer.render(ctx, [drawingPreview], transform);
     }
+  }
+
+  function setChartType(type) {
+    chartType = type === 'line' ? 'line' : 'candle';
+    draw();
   }
 
   function setSelectedDrawingId(id) {
@@ -163,6 +197,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     draw,
     setDrawingPreview,
     setSelectedDrawingId,
+    setChartType,
     destroy() {
       observer.disconnect();
       canvas.remove();
