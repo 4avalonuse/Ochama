@@ -11,6 +11,10 @@ export function attachDrawingToolsMenu({ button, onSelect }) {
       <span class="drawing-tools-icon">□</span>
       <span><strong>Retângulo</strong><small>Marcar uma zona no gráfico</small></span>
     </button>
+    <button type="button" data-drawing-tool="reference">
+      <span class="drawing-tools-icon">⌖</span>
+      <span><strong>Referência</strong><small>Fixar um ponto para comparação</small></span>
+    </button>
     <div class="drawing-tools-section">EM BREVE</div>
     <div class="drawing-tools-coming">Canal · Régua · Texto</div>
   `;
