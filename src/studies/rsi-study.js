@@ -110,7 +110,7 @@ function render(ctx, { candles, plot, config = {} }) {
   ctx.restore();
 }
 
-function createPanelControls({ container, config = {}, onChange }) {
+function createPanelControls({ container, config = {}, onChange, open = false }) {
   const current = {
     period: Math.max(2, Math.floor(Number(config.period) || 14)),
     levelLow: Number(config.levelLow) || 30,
@@ -171,6 +171,8 @@ function createPanelControls({ container, config = {}, onChange }) {
 
   Object.values(fields).forEach(field => field?.addEventListener('change', emit));
   sync();
+  settings.hidden = !open;
+  configButton?.setAttribute('aria-expanded', String(open));
 
   return () => {};
 }
