@@ -101,37 +101,6 @@ function drawGrid(ctx, width, height, plot, yMin, yMax, scaleType, xMin, xMax) {
     }
   }
 
-  const xSpan = xMax - xMin;
-  if (Number.isFinite(xMin) && Number.isFinite(xMax) && xSpan > 0) {
-    ctx.fillStyle = '#8b95a3';
-    ctx.font = '10px system-ui, sans-serif';
-    ctx.textBaseline = 'top';
-    ctx.strokeStyle = '#304052';
-    ctx.lineWidth = 1;
-
-    const axisY = plot.top + plot.height;
-    ctx.beginPath();
-    ctx.moveTo(plot.left, axisY);
-    ctx.lineTo(plot.left + plot.width, axisY);
-    ctx.stroke();
-
-    for (let i = 0; i <= 6; i += 1) {
-      const ratio = i / 6;
-      const x = plot.left + plot.width * ratio;
-      const timestamp = xMin + xSpan * ratio;
-      const label = formatDateLabel(timestamp, xSpan);
-      if (!label) continue;
-
-      ctx.beginPath();
-      ctx.moveTo(x, axisY);
-      ctx.lineTo(x, axisY + 4);
-      ctx.stroke();
-
-      ctx.textAlign = i === 0 ? 'left' : i === 6 ? 'right' : 'center';
-      ctx.fillText(label, x, axisY + 7);
-    }
-  }
-
   ctx.restore();
 }
 
