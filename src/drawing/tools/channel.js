@@ -49,7 +49,16 @@ function pointLineDistance(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy;cons
 export function channelHitTest(p,d,transform,tol=9){const lines=build(d,transform);if(!lines)return false;for(const pts of lines)for(let i=1;i<pts.length;i++)if(pointLineDistance(p,pts[i-1],pts[i])<=tol)return true;return false;}
 export function channelHitTestPart(p,d,transform){for(const k of ['start','end','third']){const q=transform.marketToScreen(d[k]);if(q&&Math.hypot(p.x-q.x,p.y-q.y)<=12)return k;}return null;}
 export function channelMove(d,delta,transform,part='body'){
-  if(part==='start'||part==='end'||part==='third'){const q=transform.marketToScreen(d[part]);if(!q)return null;const n=transform.screenToMarket({x:q.x+delta.dx,y:q.y+delta.dy});return n?{...d,[part]:n}:null;}
+  if(part==='start'||part==='end'||part==='third'){
+    const q=transform.marketToScreen(d[part]);if(!q)return null;
+    const n=transform.screenToMarket({x:q.x+delta.dx,y:q.y+delta.dy});if(!n)return null;
+    if(part!=='third') return {...d,[part]:n};
+    const a=toScaleValue(d.start.price,d.scaleType),b=toScaleValue(d.end.price,d.scaleType);
+    const span=d.end.timestamp-d.start.timestamp||1;
+    const t=(n.timestamp-d.start.timestamp)/span;
+    const v=toScaleValue(n.price,d.scaleType);
+    return Number.isFinite(a)&&Number.isFinite(b)&&Number.isFinite(v)?{...d,third:n,offsetScaled:v-(a+(b-a)*t)}:{...d,third:n};
+  }
   const pts=['start','end','third'].map(k=>transform.marketToScreen(d[k]));if(pts.some(x=>!x))return null;
   const next=pts.map(p=>transform.screenToMarket({x:p.x+delta.dx,y:p.y+delta.dy}));if(next.some(x=>!x))return null;
   return {...d,start:next[0],end:next[1],third:next[2]};
