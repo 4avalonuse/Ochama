@@ -1,0 +1,12 @@
+import { registerDrawingTool } from '../core/drawing-registry.js';
+import { distancePointToSegment } from '../render/geometry.js';
+
+export function rulerTool(){return{type:'ruler',defaults:{},create(start,end,scaleType='linear',color='#f59e0b'){return{id:crypto.randomUUID(),type:'ruler',scaleType,color,start:{...start},end:{...end}};}}}
+function metrics(d){const dt=d.end.timestamp-d.start.timestamp;const dp=d.end.price-d.start.price;const pct=d.start.price?dp/d.start.price*100:NaN;return{dt,dp,pct};}
+function fmt(v){return Number.isFinite(v)?v.toLocaleString('en-US',{maximumFractionDigits:2}):'—'}
+function timeText(ms){const days=Math.abs(ms)/86400000;if(days>=1)return fmt(days)+' d';return fmt(Math.abs(ms)/3600000)+' h';}
+export function rulerRenderer(ctx,d,transform,o={}){const a=transform.marketToScreen(d.start),b=transform.marketToScreen(d.end);if(!a||!b)return;const m=metrics(d);ctx.save();ctx.strokeStyle=d.color||'#f59e0b';ctx.lineWidth=o.selected?2.5:1.7;ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=d.color||'#f59e0b';for(const p of[a,b]){ctx.beginPath();ctx.arc(p.x,p.y,o.selected?6:4,0,Math.PI*2);ctx.fill()}const label=`${fmt(m.dp)}  ·  ${fmt(m.pct)}%  ·  ${timeText(m.dt)}`;ctx.font='700 11px sans-serif';const w=ctx.measureText(label).width+14,x=(a.x+b.x)/2-w/2,y=Math.max(4,Math.min(ctx.canvas.height-26,(a.y+b.y)/2-13));ctx.globalAlpha=.92;ctx.fillRect(x,y,w,22);ctx.globalAlpha=1;ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.fillText(label,x+7,y+11);ctx.restore();}
+export function rulerHitTestPart(p,d,t){for(const k of['start','end']){const q=t.marketToScreen(d[k]);if(q&&Math.hypot(p.x-q.x,p.y-q.y)<=11)return k;}return null}
+export function rulerHitTest(p,d,t,tol=9){const a=t.marketToScreen(d.start),b=t.marketToScreen(d.end);return a&&b&&distancePointToSegment(p,a,b)<=tol}
+export function rulerMove(d,delta,t,part='body'){if(part==='start'||part==='end'){const q=t.marketToScreen(d[part]);if(!q)return null;const n=t.screenToMarket({x:q.x+delta.dx,y:q.y+delta.dy});return n?{...d,[part]:n}:null}const a=t.marketToScreen(d.start),b=t.marketToScreen(d.end);if(!a||!b)return null;const na=t.screenToMarket({x:a.x+delta.dx,y:a.y+delta.dy}),nb=t.screenToMarket({x:b.x+delta.dx,y:b.y+delta.dy});return na&&nb?{...d,start:na,end:nb}:null}
+registerDrawingTool({type:'ruler',name:'Régua',tool:rulerTool,renderer:rulerRenderer,hitTest:rulerHitTest,hitTestPart:rulerHitTestPart,move:rulerMove,defaults:{}});
