@@ -1,6 +1,4 @@
 import { registerDrawingTool } from '../core/drawing-registry.js';
-import { distancePointToSegment } from '../render/geometry.js';
-
 const REFERENCE_COLOR = '#ef4444';
 
 export function referenceTool() {
@@ -105,11 +103,7 @@ export function referenceHitTest(point, drawing, transform, tolerance = 8) {
   if (!target) return false;
 
   if (Math.abs(point.y - target.y) <= tolerance) return true;
-  return distancePointToSegment(
-    point,
-    { x: target.x, y: 0 },
-    { x: target.x, y: transform.plotBottom ?? 0 }
-  ) <= tolerance;
+  return Math.abs(point.x - target.x) <= tolerance;
 }
 
 export function referenceMove(drawing, delta, transform) {
