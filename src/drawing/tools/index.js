@@ -5,5 +5,5 @@ import './fibonacci.js?v=20260927-29';
 import './rectangle.js';
 import './reference.js';
 import './channel.js?v=20260927-29';
-import './ruler.js?v=20260927-29';
+import './ruler.js?v=20260927-31';
 import './text.js';
