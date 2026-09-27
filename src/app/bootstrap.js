@@ -371,11 +371,10 @@ export async function bootstrap(){
           if(!exists){
             studyConfigs=[...studyConfigs,{study:'rsi',period:14,levelLow:30,levelMid:50,levelHigh:70,color:'#dbe4ee',visible:true}];
             active?.chart?.setStudies(studyConfigs);
-            rsiMenuCleanup.open?.(studyConfigs.find(item=>item.study==='rsi'));
-            status.textContent='RSI 14 ativado · configuração';
+            status.textContent='RSI 14 ativado';
           }else{
-            rsiMenuCleanup.open?.(studyConfigs.find(item=>item.study==='rsi'));
-            status.textContent='Configuração do RSI';
+            active?.chart?.setStudies(studyConfigs);
+            status.textContent='RSI 14 já ativo';
           }
         }
         return;
