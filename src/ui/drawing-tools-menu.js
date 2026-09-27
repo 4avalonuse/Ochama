@@ -1,0 +1,84 @@
+export function attachDrawingToolsMenu({ button, onSelect }) {
+  if (!button) return () => {};
+
+  const menu = document.createElement('div');
+  menu.className = 'drawing-tools-menu';
+  menu.hidden = true;
+  menu.innerHTML = `
+    <div class="drawing-tools-title">Ferramentas</div>
+    <div class="drawing-tools-section">DESENHAR</div>
+    <button type="button" data-drawing-tool="rectangle">
+      <span class="drawing-tools-icon">□</span>
+      <span><strong>Retângulo</strong><small>Marcar uma zona no gráfico</small></span>
+    </button>
+    <div class="drawing-tools-section">EM BREVE</div>
+    <div class="drawing-tools-coming">Canal · Régua · Texto</div>
+  `;
+
+  document.body.appendChild(menu);
+
+  const setOpen = open => {
+    menu.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
+    if (open) requestAnimationFrame(positionMenu);
+  };
+
+  function positionMenu() {
+    const rect = button.getBoundingClientRect();
+    const margin = 8;
+    const menuWidth = Math.min(270, window.innerWidth - margin * 2);
+    const left = Math.max(
+      margin,
+      Math.min(rect.left, window.innerWidth - menuWidth - margin)
+    );
+    menu.style.width = `${menuWidth}px`;
+    menu.style.left = `${left}px`;
+    menu.style.top = `${Math.min(
+      rect.bottom + margin,
+      window.innerHeight - menu.offsetHeight - margin
+    )}px`;
+  }
+
+  const onClick = event => {
+    event.preventDefault();
+    event.stopPropagation();
+    const item = event.target.closest('[data-drawing-tool]');
+    if (item) {
+      setOpen(false);
+      onSelect?.(item.dataset.drawingTool);
+      return;
+    }
+    setOpen(!menu.hidden);
+  };
+
+  const onButtonClick = event => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen(menu.hidden);
+  };
+
+  const onDocumentPointerDown = event => {
+    if (menu.hidden) return;
+    if (event.target === button || menu.contains(event.target)) return;
+    setOpen(false);
+  };
+
+  const onResize = () => {
+    if (!menu.hidden) positionMenu();
+  };
+
+  button.addEventListener('click', onButtonClick);
+  menu.addEventListener('click', onClick);
+  document.addEventListener('pointerdown', onDocumentPointerDown);
+  window.addEventListener('resize', onResize);
+  window.addEventListener('scroll', onResize, true);
+
+  return () => {
+    button.removeEventListener('click', onButtonClick);
+    menu.removeEventListener('click', onClick);
+    document.removeEventListener('pointerdown', onDocumentPointerDown);
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('scroll', onResize, true);
+    menu.remove();
+  };
+}
