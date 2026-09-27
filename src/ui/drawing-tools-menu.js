@@ -11,6 +11,10 @@ export function attachDrawingToolsMenu({ button, onSelect, onStudyLongPress }) {
       <span class="drawing-tools-icon">RSI</span>
       <span><strong>RSI 14</strong><small>Força relativa · painel inferior</small></span>
     </button>
+    <button type="button" data-study="volume">
+      <span class="drawing-tools-icon">VOL</span>
+      <span><strong>Volume</strong><small>Fluxo negociado · painel inferior</small></span>
+    </button>
     <div class="drawing-tools-section">DESENHAR</div>
     <button type="button" data-drawing-tool="rectangle">
       <span class="drawing-tools-icon">□</span>
