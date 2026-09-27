@@ -6,6 +6,11 @@ export function attachDrawingToolsMenu({ button, onSelect }) {
   menu.hidden = true;
   menu.innerHTML = `
     <div class="drawing-tools-title">Ferramentas</div>
+    <div class="drawing-tools-section">ESTUDOS</div>
+    <button type="button" data-study="rsi">
+      <span class="drawing-tools-icon">RSI</span>
+      <span><strong>RSI 14</strong><small>Força relativa · painel inferior</small></span>
+    </button>
     <div class="drawing-tools-section">DESENHAR</div>
     <button type="button" data-drawing-tool="rectangle">
       <span class="drawing-tools-icon">□</span>
@@ -57,9 +62,10 @@ export function attachDrawingToolsMenu({ button, onSelect }) {
     event.preventDefault();
     event.stopPropagation();
     const item = event.target.closest('[data-drawing-tool]');
-    if (item) {
+    const study = event.target.closest('[data-study]');
+    if (item || study) {
       setOpen(false);
-      onSelect?.(item.dataset.drawingTool);
+      onSelect?.(item ? item.dataset.drawingTool : { type: 'study', value: study.dataset.study });
       return;
     }
     setOpen(!menu.hidden);
