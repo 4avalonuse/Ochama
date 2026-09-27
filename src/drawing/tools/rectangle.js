@@ -1,6 +1,8 @@
 import { registerDrawingTool } from '../core/drawing-registry.js';
 import { distancePointToSegment } from '../render/geometry.js';
 
+const RECTANGLE_SEGMENTS = 120;
+
 export function rectangleTool() {
   return {
     type: 'rectangle',
@@ -18,54 +20,114 @@ export function rectangleTool() {
   };
 }
 
-function screenCorners(drawing, transform) {
-  const start = transform.marketToScreen(drawing.start);
-  const end = transform.marketToScreen(drawing.end);
-  if (!start || !end) return null;
+function interpolate(a, b, t) {
+  return {
+    timestamp: a.timestamp + (b.timestamp - a.timestamp) * t,
+    price: a.price + (b.price - a.price) * t
+  };
+}
 
-  const left = Math.min(start.x, end.x);
-  const right = Math.max(start.x, end.x);
-  const top = Math.min(start.y, end.y);
-  const bottom = Math.max(start.y, end.y);
+function rectangleMarketCorners(drawing) {
+  const start = drawing.start;
+  const end = drawing.end;
+  if (!Number.isFinite(start?.timestamp) || !Number.isFinite(start?.price) ||
+      !Number.isFinite(end?.timestamp) || !Number.isFinite(end?.price)) {
+    return null;
+  }
+
+  const leftTime = Math.min(start.timestamp, end.timestamp);
+  const rightTime = Math.max(start.timestamp, end.timestamp);
+  const bottomPrice = Math.min(start.price, end.price);
+  const topPrice = Math.max(start.price, end.price);
 
   return {
     start,
     end,
-    left,
-    right,
-    top,
-    bottom,
-    corners: [
-      { x: left, y: top },
-      { x: right, y: top },
-      { x: right, y: bottom },
-      { x: left, y: bottom }
+    market: [
+      { timestamp: leftTime, price: topPrice },
+      { timestamp: rightTime, price: topPrice },
+      { timestamp: rightTime, price: bottomPrice },
+      { timestamp: leftTime, price: bottomPrice }
     ]
   };
 }
 
+function edgePoints(a, b, transform) {
+  const points = [];
+  for (let i = 0; i <= RECTANGLE_SEGMENTS; i += 1) {
+    const screen = transform.marketToScreen(interpolate(a, b, i / RECTANGLE_SEGMENTS));
+    if (screen) points.push(screen);
+  }
+  return points;
+}
+
+function rectanglePoints(drawing, transform) {
+  const corners = rectangleMarketCorners(drawing);
+  if (!corners) return null;
+
+  const edges = [
+    edgePoints(corners.market[0], corners.market[1], transform),
+    edgePoints(corners.market[1], corners.market[2], transform),
+    edgePoints(corners.market[2], corners.market[3], transform),
+    edgePoints(corners.market[3], corners.market[0], transform)
+  ];
+
+  if (edges.some(edge => edge.length < 2)) return null;
+
+  return { ...corners, edges };
+}
+
+function screenCorners(drawing, transform) {
+  const data = rectanglePoints(drawing, transform);
+  if (!data) return null;
+
+  const start = transform.marketToScreen(drawing.start);
+  const end = transform.marketToScreen(drawing.end);
+  if (!start || !end) return null;
+
+  const corners = data.market.map(point => transform.marketToScreen(point));
+  if (corners.some(point => !point)) return null;
+
+  return { ...data, start, end, corners };
+}
+
 export function rectangleRenderer(context, drawing, transform, options = {}) {
-  const box = screenCorners(drawing, transform);
-  if (!box) return;
+  const data = rectanglePoints(drawing, transform);
+  if (!data) return;
 
-  const width = box.right - box.left;
-  const height = box.bottom - box.top;
-  if (width < 1 || height < 1) return;
-
+  const color = drawing.color || '#60a5fa';
   context.save();
-  context.fillStyle = drawing.color || '#60a5fa';
+
+  context.fillStyle = color;
   context.globalAlpha = options.selected ? 0.16 : 0.08;
-  context.fillRect(box.left, box.top, width, height);
+  context.beginPath();
+  data.edges[0].forEach((point, index) => {
+    if (index === 0) context.moveTo(point.x, point.y);
+    else context.lineTo(point.x, point.y);
+  });
+  for (let edgeIndex = 1; edgeIndex < data.edges.length; edgeIndex += 1) {
+    for (const point of data.edges[edgeIndex]) context.lineTo(point.x, point.y);
+  }
+  context.closePath();
+  context.fill();
 
   context.globalAlpha = options.selected ? 1 : 0.82;
-  context.strokeStyle = drawing.color || '#60a5fa';
+  context.strokeStyle = color;
   context.lineWidth = options.selected ? 2.5 : 1.5;
-  context.strokeRect(box.left, box.top, width, height);
+  context.beginPath();
+  data.edges.forEach(edge => {
+    edge.forEach((point, index) => {
+      if (edge === data.edges[0] && index === 0) context.moveTo(point.x, point.y);
+      else context.lineTo(point.x, point.y);
+    });
+  });
+  context.closePath();
+  context.stroke();
 
   if (options.selected) {
-    context.fillStyle = drawing.color || '#60a5fa';
+    context.fillStyle = color;
     context.globalAlpha = 1;
-    for (const point of box.corners) {
+    for (const point of data.corners) {
       context.beginPath();
       context.arc(point.x, point.y, 5, 0, Math.PI * 2);
       context.fill();
@@ -95,20 +157,22 @@ export function rectangleHitTestPart(point, drawing, transform) {
 }
 
 export function rectangleHitTest(point, drawing, transform, tolerance = 8) {
+  const data = rectanglePoints(drawing, transform);
+  if (!data) return false;
+
+  for (const edge of data.edges) {
+    for (let i = 1; i < edge.length; i += 1) {
+      if (distancePointToSegment(point, edge[i - 1], edge[i]) <= tolerance) return true;
+    }
+  }
+
   const box = screenCorners(drawing, transform);
   if (!box) return false;
 
-  const edges = [
-    [{ x: box.left, y: box.top }, { x: box.right, y: box.top }],
-    [{ x: box.right, y: box.top }, { x: box.right, y: box.bottom }],
-    [{ x: box.right, y: box.bottom }, { x: box.left, y: box.bottom }],
-    [{ x: box.left, y: box.bottom }, { x: box.left, y: box.top }]
-  ];
-
-  if (edges.some(([a, b]) => distancePointToSegment(point, a, b) <= tolerance)) return true;
-
-  return point.x >= box.left && point.x <= box.right &&
-    point.y >= box.top && point.y <= box.bottom;
+  const xs = box.corners.map(item => item.x);
+  const ys = box.corners.map(item => item.y);
+  return point.x >= Math.min(...xs) && point.x <= Math.max(...xs) &&
+    point.y >= Math.min(...ys) && point.y <= Math.max(...ys);
 }
 
 export function rectangleMove(drawing, delta, transform, part = 'body') {
