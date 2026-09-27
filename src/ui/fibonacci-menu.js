@@ -12,19 +12,41 @@ export function attachFibonacciMenu({ button, onActivate, onModeChange }) {
     </div>
     <div class="fibonacci-help">
       <strong>Como usar</strong>
-      <span>1. Escolha o tipo.</span>
-      <span>2. Toque no início do movimento.</span>
-      <span>3. Arraste até o fim.</span>
+      <span>Toque em FIB para desenhar.</span>
+      <span>Segure FIB para escolher o tipo.</span>
+      <span>Depois toque no início e arraste até o fim.</span>
       <small>Retração mostra níveis dentro do movimento. Extensão projeta níveis acima de 100% para possíveis alvos.</small>
     </div>
   `;
 
-  button.parentElement?.appendChild(menu);
+  // O menu fica fora da toolbar para não ser cortado pelo overflow horizontal
+  // usado no celular.
+  document.body.appendChild(menu);
+
   let mode = 'retracement';
+  let longPressTimer = null;
+  let suppressNextClick = false;
+
+  const positionMenu = () => {
+    const rect = button.getBoundingClientRect();
+    const margin = 8;
+    const menuWidth = Math.min(248, window.innerWidth - margin * 2);
+    const left = Math.max(
+      margin,
+      Math.min(rect.left, window.innerWidth - menuWidth - margin)
+    );
+    menu.style.width = `${menuWidth}px`;
+    menu.style.left = `${left}px`;
+    menu.style.top = `${Math.min(
+      rect.bottom + margin,
+      window.innerHeight - menu.offsetHeight - margin
+    )}px`;
+  };
 
   const setOpen = open => {
     menu.hidden = !open;
     button.setAttribute('aria-expanded', String(open));
+    if (open) requestAnimationFrame(positionMenu);
   };
 
   const setMode = next => {
@@ -35,16 +57,51 @@ export function attachFibonacciMenu({ button, onActivate, onModeChange }) {
     onModeChange?.(mode);
   };
 
-  const toggle = event => {
+  const activate = () => {
+    setOpen(false);
+    onActivate?.();
+  };
+
+  const toggleMenu = event => {
     event.preventDefault();
     event.stopPropagation();
     setOpen(menu.hidden);
   };
 
-  const onDocumentPointerDown = event => {
-    if (menu.hidden) return;
-    if (event.target === button || menu.contains(event.target)) return;
-    setOpen(false);
+  const onClick = event => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (suppressNextClick) {
+      suppressNextClick = false;
+      return;
+    }
+
+    // Toque curto = Fibonacci imediatamente.
+    activate();
+  };
+
+  const onPointerDown = event => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    longPressTimer = window.setTimeout(() => {
+      longPressTimer = null;
+      suppressNextClick = true;
+      setOpen(true);
+    }, 550);
+  };
+
+  const cancelLongPress = () => {
+    if (!longPressTimer) return;
+    window.clearTimeout(longPressTimer);
+    longPressTimer = null;
+  };
+
+  const onContextMenu = event => {
+    event.preventDefault();
+    event.stopPropagation();
+    cancelLongPress();
+    suppressNextClick = true;
+    setOpen(true);
   };
 
   const onMenuClick = event => {
@@ -53,23 +110,44 @@ export function attachFibonacciMenu({ button, onActivate, onModeChange }) {
     event.preventDefault();
     event.stopPropagation();
     setMode(modeButton.dataset.fibMode);
-    setOpen(false);
-    onActivate?.();
+    activate();
   };
 
-  button.addEventListener('click', toggle);
-  button.addEventListener('keydown', event => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    toggle(event);
-  });
+  const onDocumentPointerDown = event => {
+    if (menu.hidden) return;
+    if (event.target === button || menu.contains(event.target)) return;
+    setOpen(false);
+  };
+
+  const onResize = () => {
+    if (!menu.hidden) positionMenu();
+  };
+
+  button.addEventListener('click', onClick);
+  button.addEventListener('pointerdown', onPointerDown);
+  button.addEventListener('pointerup', cancelLongPress);
+  button.addEventListener('pointercancel', cancelLongPress);
+  button.addEventListener('pointerleave', cancelLongPress);
+  button.addEventListener('contextmenu', onContextMenu);
   menu.addEventListener('click', onMenuClick);
   document.addEventListener('pointerdown', onDocumentPointerDown);
+  window.addEventListener('resize', onResize);
+  window.addEventListener('scroll', onResize, true);
 
   setMode(mode);
 
   return () => {
-    button.removeEventListener('click', toggle);
+    cancelLongPress();
+    button.removeEventListener('click', onClick);
+    button.removeEventListener('pointerdown', onPointerDown);
+    button.removeEventListener('pointerup', cancelLongPress);
+    button.removeEventListener('pointercancel', cancelLongPress);
+    button.removeEventListener('pointerleave', cancelLongPress);
+    button.removeEventListener('contextmenu', onContextMenu);
+    menu.removeEventListener('click', onMenuClick);
     document.removeEventListener('pointerdown', onDocumentPointerDown);
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('scroll', onResize, true);
     menu.remove();
   };
 }
