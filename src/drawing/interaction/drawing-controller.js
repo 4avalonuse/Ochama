@@ -32,6 +32,7 @@ export function createDrawingInteraction({
   let fibonacciMode = 'retracement';
   let draftPoints = [];
   let requestText = null;
+  let selectedId = null;
 
   const channelInteraction = createChannelInteraction({
     getDescriptor: () => getDrawingTool('channel'),
