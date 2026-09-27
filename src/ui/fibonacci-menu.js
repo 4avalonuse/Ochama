@@ -12,18 +12,15 @@ export function attachFibonacciMenu({ button, onActivate, onModeChange }) {
     </div>
     <div class="fibonacci-help">
       <strong>Como usar</strong>
-      <span>1. Escolha retração ou extensão.</span>
+      <span>1. Escolha o tipo.</span>
       <span>2. Toque no início do movimento.</span>
-      <span>3. Arraste até o fim do movimento.</span>
-      <small>Retração ajuda a localizar possíveis suportes e resistências. Extensão projeta níveis além de 100% para possíveis alvos.</small>
+      <span>3. Arraste até o fim.</span>
+      <small>Retração mostra níveis dentro do movimento. Extensão projeta níveis acima de 100% para possíveis alvos.</small>
     </div>
   `;
 
   button.parentElement?.appendChild(menu);
   let mode = 'retracement';
-  let longPressTimer = null;
-  let longPress = false;
-  let suppressClick = false;
 
   const setOpen = open => {
     menu.hidden = !open;
@@ -38,41 +35,10 @@ export function attachFibonacciMenu({ button, onActivate, onModeChange }) {
     onModeChange?.(mode);
   };
 
-  const activate = event => {
-    event?.preventDefault?.();
-    setOpen(false);
-    onActivate?.();
-  };
-
-  const startLongPress = event => {
-    if (event.pointerType === 'mouse') return;
-    longPress = false;
-    window.clearTimeout(longPressTimer);
-    longPressTimer = window.setTimeout(() => {
-      longPress = true;
-      suppressClick = true;
-      setOpen(true);
-    }, 520);
-  };
-
-  const cancelLongPress = () => {
-    window.clearTimeout(longPressTimer);
-    longPressTimer = null;
-  };
-
-  const finishPointer = event => {
-    cancelLongPress();
-    if (longPress) event.preventDefault();
-  };
-
-  const onMouseClick = event => {
-    if (suppressClick) {
-      suppressClick = false;
-      longPress = false;
-      event.preventDefault();
-      return;
-    }
-    activate(event);
+  const toggle = event => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen(menu.hidden);
   };
 
   const onDocumentPointerDown = event => {
@@ -81,36 +47,28 @@ export function attachFibonacciMenu({ button, onActivate, onModeChange }) {
     setOpen(false);
   };
 
-  button.addEventListener('pointerdown', startLongPress);
-  button.addEventListener('pointerup', finishPointer);
-  button.addEventListener('pointercancel', cancelLongPress);
-  button.addEventListener('pointerleave', cancelLongPress);
-  button.addEventListener('click', onMouseClick);
-
-  menu.addEventListener('click', event => {
+  const onMenuClick = event => {
     const modeButton = event.target.closest('[data-fib-mode]');
     if (!modeButton) return;
+    event.preventDefault();
+    event.stopPropagation();
     setMode(modeButton.dataset.fibMode);
     setOpen(false);
     onActivate?.();
-  });
+  };
 
+  button.addEventListener('click', toggle);
   button.addEventListener('keydown', event => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    activate(event);
+    toggle(event);
   });
-
+  menu.addEventListener('click', onMenuClick);
   document.addEventListener('pointerdown', onDocumentPointerDown);
+
   setMode(mode);
 
   return () => {
-    cancelLongPress();
-    button.removeEventListener('pointerdown', startLongPress);
-    button.removeEventListener('pointerup', finishPointer);
-    button.removeEventListener('pointercancel', cancelLongPress);
-    button.removeEventListener('pointerleave', cancelLongPress);
-    button.removeEventListener('click', onMouseClick);
+    button.removeEventListener('click', toggle);
     document.removeEventListener('pointerdown', onDocumentPointerDown);
     menu.remove();
   };
