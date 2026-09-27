@@ -353,6 +353,17 @@ export async function bootstrap(){
 
   drawingToolsMenuCleanup=attachDrawingToolsMenu({
     button:drawingMoreButton,
+    onStudyLongPress:(selection)=>{
+      if(selection?.value==='rsi'){
+        const exists=studyConfigs.some(item=>item.study==='rsi');
+        if(!exists){
+          studyConfigs=[...studyConfigs,{study:'rsi',period:14,levelLow:30,levelMid:50,levelHigh:70,color:'#dbe4ee',visible:true}];
+          active?.chart?.setStudies(studyConfigs);
+        }
+        rsiMenuCleanup.open?.(studyConfigs.find(item=>item.study==='rsi'));
+        status.textContent='Configuração do RSI';
+      }
+    },
     onSelect:(selection)=>{
       if(selection?.type==='study'){
         if(selection.value==='rsi'){
