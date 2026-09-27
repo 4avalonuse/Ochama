@@ -16,10 +16,20 @@ import { attachRsiMenu } from '../ui/rsi-menu.js?v=20260927-27';
 import { attachVolumeMenu } from '../ui/volume-menu.js?v=20260927-32';
 import { attachMacdMenu } from '../ui/macd-menu.js?v=20260927-33';
 import { attachBollingerMenu } from '../ui/bollinger-menu.js?v=20260927-34';
+import { attachAtrMenu } from '../ui/atr-menu.js';
 import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
 import { createTextEditor } from '../ui/text-editor.js';
 
 const STUDIES={
+  atr:{
+    label:'ATR',
+    attach:attachAtrMenu,
+    activatedMessage:'ATR 14 ativado',
+    configMessage:'Configuração do ATR',
+    infoTitle:'ATR',
+    infoText:'Mede a volatilidade do ativo pela amplitude real dos candles. Valores maiores indicam movimentos recentes mais amplos; valores menores indicam menor volatilidade.',
+    defaultConfig:{study:'atr',period:14,color:'#dbe4ee',visible:true}
+  },
   rsi:{
     label:'RSI',
     attach:attachRsiMenu,
