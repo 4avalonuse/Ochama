@@ -1,4 +1,4 @@
-export function attachDrawingToolsMenu({ button, onSelect }) {
+export function attachDrawingToolsMenu({ button, onSelect, onStudyLongPress }) {
   if (!button) return () => {};
 
   const menu = document.createElement('div');
@@ -58,12 +58,43 @@ export function attachDrawingToolsMenu({ button, onSelect }) {
     )}px`;
   }
 
+  let studyLongPressTimer = null;
+  let studyLongPressed = false;
+
+  const clearStudyLongPress = () => {
+    if (studyLongPressTimer) {
+      clearTimeout(studyLongPressTimer);
+      studyLongPressTimer = null;
+    }
+  };
+
+  const onStudyPointerDown = event => {
+    const study = event.target.closest('[data-study]');
+    if (!study) return;
+    studyLongPressed = false;
+    clearStudyLongPress();
+    studyLongPressTimer = setTimeout(() => {
+      studyLongPressed = true;
+      setOpen(false);
+      onStudyLongPress?.({ type: 'study', value: study.dataset.study });
+    }, 550);
+  };
+
+  const onStudyPointerUp = () => {
+    clearStudyLongPress();
+  };
+
   const onClick = event => {
     event.preventDefault();
     event.stopPropagation();
     const item = event.target.closest('[data-drawing-tool]');
     const study = event.target.closest('[data-study]');
     if (item || study) {
+      clearStudyLongPress();
+      if (studyLongPressed) {
+        studyLongPressed = false;
+        return;
+      }
       setOpen(false);
       onSelect?.(item ? item.dataset.drawingTool : { type: 'study', value: study.dataset.study });
       return;
@@ -88,6 +119,9 @@ export function attachDrawingToolsMenu({ button, onSelect }) {
   };
 
   button.addEventListener('click', onButtonClick);
+  menu.addEventListener('pointerdown', onStudyPointerDown);
+  menu.addEventListener('pointerup', onStudyPointerUp);
+  menu.addEventListener('pointercancel', onStudyPointerUp);
   menu.addEventListener('click', onClick);
   document.addEventListener('pointerdown', onDocumentPointerDown);
   window.addEventListener('resize', onResize);
@@ -95,6 +129,10 @@ export function attachDrawingToolsMenu({ button, onSelect }) {
 
   return () => {
     button.removeEventListener('click', onButtonClick);
+    clearStudyLongPress();
+    menu.removeEventListener('pointerdown', onStudyPointerDown);
+    menu.removeEventListener('pointerup', onStudyPointerUp);
+    menu.removeEventListener('pointercancel', onStudyPointerUp);
     menu.removeEventListener('click', onClick);
     document.removeEventListener('pointerdown', onDocumentPointerDown);
     window.removeEventListener('resize', onResize);
