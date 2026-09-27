@@ -62,10 +62,7 @@ export async function bootstrap(){
   let studyConfigs=[];
   let fibonacciMenuCleanup=()=>{};
   let drawingToolsMenuCleanup=()=>{};
-  let rsiMenuCleanup=()=>{};
-  let volumeMenuCleanup=()=>{};
-  let macdMenuCleanup=()=>{};
-  let bollingerMenuCleanup=()=>{};
+  const studyMenuCleanups={};
   const textEditor=createTextEditor();
 
   const PROVIDER_SYMBOLS={
@@ -308,10 +305,7 @@ export async function bootstrap(){
     movingAverageCleanup?.();
     fibonacciMenuCleanup?.();
     drawingToolsMenuCleanup?.();
-    rsiMenuCleanup?.destroy?.();
-    volumeMenuCleanup?.destroy?.();
-    macdMenuCleanup?.destroy?.();
-    bollingerMenuCleanup?.destroy?.();
+    Object.values(studyMenuCleanups).forEach(cleanup=>cleanup?.destroy?.());
     textEditor.destroy();
     saveActiveState();
     if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
@@ -348,32 +342,22 @@ export async function bootstrap(){
     }
   });
 
-  rsiMenuCleanup=attachRsiMenu({
-    anchor:drawingMoreButton,
-    getConfig:()=>studyConfigs.find(item=>item.study==='rsi') || null,
-    onChange:nextConfig=>{
-      studyConfigs=studyConfigs.map(item=>item.study==='rsi'?{...item,...nextConfig}:item);
-      active?.chart?.setStudies(studyConfigs);
-    }
-  });
+  const studyMenus=[
+    {id:'rsi',attach:attachRsiMenu},
+    {id:'volume',attach:attachVolumeMenu},
+    {id:'macd',attach:attachMacdMenu},
+    {id:'bollinger',attach:attachBollingerMenu}
+  ];
 
-  volumeMenuCleanup=attachVolumeMenu({anchor:drawingMoreButton,getConfig:()=>studyConfigs.find(item=>item.study==='volume')||null,onChange:next=>{studyConfigs=studyConfigs.map(item=>item.study==='volume'?{...item,...next}:item);active?.chart?.setStudies(studyConfigs);}});
-  macdMenuCleanup=attachMacdMenu({
-    anchor:drawingMoreButton,
-    getConfig:()=>studyConfigs.find(item=>item.study==='macd')||null,
-    onChange:next=>{
-      studyConfigs=studyConfigs.map(item=>item.study==='macd'?{...item,...next}:item);
-      active?.chart?.setStudies(studyConfigs);
-    }
-  });
-
-  bollingerMenuCleanup=attachBollingerMenu({
-    anchor:drawingMoreButton,
-    getConfig:()=>studyConfigs.find(item=>item.study==='bollinger')||null,
-    onChange:next=>{
-      studyConfigs=studyConfigs.map(item=>item.study==='bollinger'?{...item,...next}:item);
-      active?.chart?.setStudies(studyConfigs);
-    }
+  studyMenus.forEach(({id,attach})=>{
+    studyMenuCleanups[id]=attach({
+      anchor:drawingMoreButton,
+      getConfig:()=>studyConfigs.find(item=>item.study===id)||null,
+      onChange:next=>{
+        studyConfigs=studyConfigs.map(item=>item.study===id?{...item,...next}:item);
+        active?.chart?.setStudies(studyConfigs);
+      }
+    });
   });
 
   drawingToolsMenuCleanup=attachDrawingToolsMenu({
@@ -385,7 +369,7 @@ export async function bootstrap(){
           studyConfigs=[...studyConfigs,{study:'rsi',period:14,levelLow:30,levelMid:50,levelHigh:70,color:'#dbe4ee',visible:true}];
           active?.chart?.setStudies(studyConfigs);
         }
-        rsiMenuCleanup.open?.(studyConfigs.find(item=>item.study==='rsi'));
+        studyMenuCleanups.rsi?.open?.(studyConfigs.find(item=>item.study==='rsi'));
         status.textContent='Configuração do RSI';
       }
        if(selection?.value==='volume'){
@@ -394,7 +378,7 @@ export async function bootstrap(){
           studyConfigs=[...studyConfigs,{study:'volume',showAverage:true,averagePeriod:20,averageType:'sma',upColor:'#4ade80',downColor:'#f87171',averageColor:'#f59e0b',visible:true}];
           active?.chart?.setStudies(studyConfigs);
         }
-        volumeMenuCleanup.open?.(studyConfigs.find(item=>item.study==='volume'));
+        studyMenuCleanups.volume?.open?.(studyConfigs.find(item=>item.study==='volume'));
         status.textContent='Configuração do volume';
       }
        if(selection?.value==='macd'){
@@ -403,7 +387,7 @@ export async function bootstrap(){
           studyConfigs=[...studyConfigs,{study:'macd',fastPeriod:12,slowPeriod:26,signalPeriod:9,source:'close',macdColor:'#dbe4ee',signalColor:'#f59e0b',upColor:'#4ade80',downColor:'#f87171',visible:true}];
           active?.chart?.setStudies(studyConfigs);
         }
-        macdMenuCleanup.open?.(studyConfigs.find(item=>item.study==='macd'));
+        studyMenuCleanups.macd?.open?.(studyConfigs.find(item=>item.study==='macd'));
         status.textContent='Configuração do MACD';
       }
        if(selection?.value==='bollinger'){
@@ -412,7 +396,7 @@ export async function bootstrap(){
           studyConfigs=[...studyConfigs,{study:'bollinger',period:20,multiplier:2,source:'close',showMiddle:true,upperColor:'#60a5fa',middleColor:'#f59e0b',lowerColor:'#60a5fa',showFill:true,fillColor:'#60a5fa',visible:true}];
           active?.chart?.setStudies(studyConfigs);
         }
-        bollingerMenuCleanup.open?.(studyConfigs.find(item=>item.study==='bollinger'));
+        studyMenuCleanups.bollinger?.open?.(studyConfigs.find(item=>item.study==='bollinger'));
         status.textContent='Configuração das Bandas de Bollinger';
       }
    },
