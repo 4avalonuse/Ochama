@@ -11,7 +11,7 @@ import { createDrawingPersistence } from '../drawing/storage/drawing-persistence
 import { createDrawingInteraction } from '../drawing/interaction/drawing-controller.js';
 import '../drawing/tools/index.js';
 import { attachMovingAverageMenu } from '../ui/moving-average-menu.js';
-import { attachFibonacciMenu } from '../ui/fibonacci-menu.js';
+import { attachFibonacciMenu } from '../ui/fibonacci-menu.js?v=20260927-29';
 import { attachRsiMenu } from '../ui/rsi-menu.js?v=20260927-27';
 import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
 import { createTextEditor } from '../ui/text-editor.js';
