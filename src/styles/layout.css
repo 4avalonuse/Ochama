@@ -79,7 +79,7 @@
 .moving-average-item select,.moving-average-item input[type=number]{width:100%;height:27px;box-sizing:border-box;border:1px solid #27364a;border-radius:6px;background:#121b26;color:#dbe4ee;padding:0 4px;font-size:10px;outline:none}.moving-average-item select:focus,.moving-average-item input[type=number]:focus{border-color:#5b91c9}.moving-average-color{width:27px!important;height:27px!important;padding:2px!important;border:1px solid #27364a;border-radius:6px;background:#121b26}.moving-average-visibility,.moving-average-remove{width:24px;height:27px;padding:0;border:0;border-radius:5px;background:transparent;color:#9aa7b7;font-size:14px;line-height:1}.moving-average-visibility:hover{background:#18283a;color:#f1f5f9}.moving-average-remove:hover{background:#241820;color:#f3cbd1}
 @media(max-width:480px){.moving-average-menu{top:88px}.moving-average-item{grid-template-columns:40px 50px minmax(50px,1fr) 27px 27px 24px;gap:3px;padding:5px}.moving-average-form{grid-template-columns:1fr 64px 1fr}.moving-average-menu{padding:10px}}
 
-.fibonacci-menu{position:absolute;top:50px;left:12px;z-index:31;width:248px;padding:12px;border:1px solid #33465d;border-radius:12px;background:rgba(11,17,25,.97);box-shadow:0 12px 30px rgba(0,0,0,.4);backdrop-filter:blur(10px)}
+.fibonacci-menu{position:fixed;top:0;left:0;z-index:1000;width:248px;box-sizing:border-box;padding:12px;border:1px solid #33465d;border-radius:12px;background:rgba(11,17,25,.97);box-shadow:0 12px 30px rgba(0,0,0,.4);backdrop-filter:blur(10px)}
 .fibonacci-title{margin-bottom:9px;color:#f2f6fa;font-size:12px;font-weight:850;letter-spacing:.04em}
 .fibonacci-modes{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .fibonacci-modes button{height:31px;border:1px solid #304055;border-radius:7px;background:#121b26;color:#bfcbd8;font-size:9px;font-weight:850;letter-spacing:.04em}
@@ -88,8 +88,9 @@
 .fibonacci-help{display:flex;flex-direction:column;gap:4px;margin-top:10px;padding-top:9px;border-top:1px solid #26364a;color:#8996a6;font-size:9px;line-height:1.35}
 .fibonacci-help strong{color:#dbe4ee;font-size:10px}
 .fibonacci-help small{margin-top:4px;color:#6f7d8e;font-size:9px;line-height:1.4}
+.fibonacci-menu button{user-select:none;-webkit-user-select:none;touch-action:manipulation}
 @media(max-width:480px){
-  .fibonacci-menu{top:46px;left:8px;width:calc(100% - 16px);box-sizing:border-box}
+  .fibonacci-menu{width:calc(100vw - 16px)}
 }
 
 /* Chart controls: labels are UI, not selectable text. */
