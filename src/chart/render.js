@@ -212,7 +212,7 @@ function drawLine(ctx, candles, state, plot) {
   ctx.restore();
 }
 
-export function createChart(host, candles, viewport, drawingManager = null) {
+export function createChart(host, candles, viewport, drawingManager = null, options = {}) {
   const canvas = document.createElement('canvas');
   canvas.className = 'chart-canvas';
   canvas.setAttribute('aria-label', 'Gráfico de candles BTC-USD');
@@ -226,6 +226,9 @@ export function createChart(host, candles, viewport, drawingManager = null) {
   let chartType = 'candle';
   let movingAverages = [];
   let studyConfigs = [];
+  let paneRatio = 0.25;
+  let paneControls = null;
+  let paneDragCleanup = null;
 
   function resize() {
     const rect = host.getBoundingClientRect();
@@ -250,9 +253,60 @@ export function createChart(host, candles, viewport, drawingManager = null) {
 
     const paneStudies = getPaneStudies(studyConfigs);
     const paneGap = paneStudies.length ? 12 : 0;
-    const paneHeight = paneStudies.length ? Math.min(150, Math.max(110, height * 0.25)) : 0;
+    const paneHeight = paneStudies.length
+      ? Math.min(height * 0.45, Math.max(110, height * paneRatio))
+      : 0;
     const mainHeight = paneStudies.length ? Math.max(1, height - paneHeight - paneGap) : height;
     const plot = createPlotGeometry(width, mainHeight);
+
+    if (!paneStudies.length) {
+      paneControls?.remove();
+      paneControls = null;
+      paneDragCleanup?.();
+      paneDragCleanup = null;
+    } else if (!paneControls) {
+      paneControls = document.createElement('div');
+      paneControls.className = 'study-pane-controls';
+      paneControls.innerHTML = '<div class="study-pane-resize" role="separator" aria-label="Redimensionar painel RSI" title="Arraste para redimensionar"><span></span></div><button type="button" class="study-pane-close" aria-label="Fechar painel" title="Fechar painel">×</button>';
+      host.appendChild(paneControls);
+
+      paneControls.querySelector('.study-pane-close')?.addEventListener('click', () => {
+        studyConfigs = [];
+        paneControls?.remove();
+        paneControls = null;
+        paneDragCleanup?.();
+        paneDragCleanup = null;
+        options.onPaneClose?.();
+        draw();
+      });
+
+      const handle = paneControls.querySelector('.study-pane-resize');
+      const onPointerDown = event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const startY = event.clientY;
+        const startRatio = paneRatio;
+
+        const onPointerMove = moveEvent => {
+          moveEvent.preventDefault();
+          const delta = startY - moveEvent.clientY;
+          const nextHeight = (height * startRatio) + delta;
+          paneRatio = Math.max(0.15, Math.min(0.45, nextHeight / Math.max(height, 1)));
+          draw();
+        };
+
+        const onPointerUp = () => {
+          window.removeEventListener('pointermove', onPointerMove);
+          window.removeEventListener('pointerup', onPointerMove);
+        };
+
+        window.addEventListener('pointermove', onPointerMove, { passive: false });
+        window.addEventListener('pointerup', onPointerUp, { once: true });
+      };
+
+      handle?.addEventListener('pointerdown', onPointerDown);
+      paneDragCleanup = () => handle?.removeEventListener('pointerdown', onPointerDown);
+    }
 
     drawGrid(ctx, width, height, plot, state.y.min, state.y.max, normalizeScaleType(state.yScaleType), state.x.min, state.x.max);
     if (chartType === 'line') drawLine(ctx, candles, state, plot);
@@ -261,6 +315,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
 
     if (paneStudies.length) {
       const paneTop = mainHeight + paneGap;
+      if (paneControls) paneControls.style.top = mainHeight + 'px';
       const panePlotHeight = Math.max(1, paneHeight - 24);
       paneStudies.forEach(({ study, configs }) => {
         study.render(ctx, {
@@ -319,7 +374,13 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     setChartType,
     setMovingAverages,
     setStudies,
+    setPaneRatio(nextRatio) {
+      paneRatio = Math.max(0.15, Math.min(0.45, Number(nextRatio) || 0.25));
+      draw();
+    },
     destroy() {
+      paneDragCleanup?.();
+      paneControls?.remove();
       observer.disconnect();
       canvas.remove();
     }
