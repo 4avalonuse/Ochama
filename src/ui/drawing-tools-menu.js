@@ -27,11 +27,6 @@ export function attachDrawingToolsMenu({ button, onSelect }) {
       <span class="drawing-tools-icon">T</span>
       <span><strong>Texto</strong><small>Anotar diretamente no gráfico</small></span>
     </button>
-    <div class="drawing-tools-section">ESTUDOS</div>
-    <button type="button" data-study="rsi">
-      <span class="drawing-tools-icon">R</span>
-      <span><strong>RSI</strong><small>Força relativa · período 14</small></span>
-    </button>
   `;
 
   document.body.appendChild(menu);
@@ -64,13 +59,7 @@ export function attachDrawingToolsMenu({ button, onSelect }) {
     const item = event.target.closest('[data-drawing-tool]');
     if (item) {
       setOpen(false);
-      onSelect?.({ type: 'drawing', value: item.dataset.drawingTool });
-      return;
-    }
-    const study = event.target.closest('[data-study]');
-    if (study) {
-      setOpen(false);
-      onSelect?.({ type: 'study', value: study.dataset.study });
+      onSelect?.(item.dataset.drawingTool);
       return;
     }
     setOpen(!menu.hidden);
