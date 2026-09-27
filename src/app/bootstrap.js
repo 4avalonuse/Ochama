@@ -12,6 +12,7 @@ import { createDrawingInteraction } from '../drawing/interaction/drawing-control
 import '../drawing/tools/index.js';
 import { attachMovingAverageMenu } from '../ui/moving-average-menu.js';
 import { attachFibonacciMenu } from '../ui/fibonacci-menu.js';
+import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const INITIAL_CANDLES=120;
@@ -54,6 +55,7 @@ export async function bootstrap(){
   let activeDrawingInteraction=null;
   let movingAverageConfigs=[];
   let fibonacciMenuCleanup=()=>{};
+  let drawingToolsMenuCleanup=()=>{};
 
   const PROVIDER_SYMBOLS={
     yahoo:{'BTC-USD':'BTC-USD','SOL-USD':'SOL-USD'},
@@ -275,6 +277,7 @@ export async function bootstrap(){
   window.addEventListener('pagehide',()=>{
     movingAverageCleanup?.();
     fibonacciMenuCleanup?.();
+    drawingToolsMenuCleanup?.();
     saveActiveState();
     if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
   });
@@ -289,6 +292,7 @@ export async function bootstrap(){
   const drawingHorizontalButton=document.querySelector('#drawing-horizontal');
   const drawingVerticalButton=document.querySelector('#drawing-vertical');
   const drawingFibonacciButton=document.querySelector('#drawing-fibonacci');
+  const drawingMoreButton=document.querySelector('#drawing-more');
 
   const setToolbarMode=(mode)=>{
     active?.interaction?.setMode(mode);
@@ -298,6 +302,7 @@ export async function bootstrap(){
     drawingHorizontalButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='horizontal');
     drawingVerticalButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='vertical');
     drawingFibonacciButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='fibonacci');
+    document.querySelector('#drawing-more')?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='rectangle');
   };
 
   fibonacciMenuCleanup=attachFibonacciMenu({
@@ -305,6 +310,15 @@ export async function bootstrap(){
     onModeChange:(mode)=>activeDrawingInteraction?.setFibonacciMode?.(mode),
     onActivate:()=>{
       activeDrawingInteraction?.setTool('fibonacci');
+      setToolbarMode('drawing');
+    }
+  });
+
+  drawingToolsMenuCleanup=attachDrawingToolsMenu({
+    button:drawingMoreButton,
+    onSelect:(tool)=>{
+      if(tool!=='rectangle') return;
+      activeDrawingInteraction?.setTool('rectangle');
       setToolbarMode('drawing');
     }
   });
@@ -345,6 +359,7 @@ export async function bootstrap(){
     activeDrawingInteraction?.setTool('vertical');
     setToolbarMode('drawing');
   });
+  drawingMoreButton?.addEventListener('contextmenu',event=>event.preventDefault());
   drawingUndoButton?.addEventListener('click',()=>{
     if(active?.drawingManager?.undo()){
       active.chart.draw();
