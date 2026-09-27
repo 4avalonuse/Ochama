@@ -19,6 +19,45 @@ import { attachBollingerMenu } from '../ui/bollinger-menu.js?v=20260927-34';
 import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
 import { createTextEditor } from '../ui/text-editor.js';
 
+const STUDIES={
+  rsi:{
+    label:'RSI',
+    attach:attachRsiMenu,
+    activatedMessage:'RSI 14 ativado',
+    configMessage:'Configuração do RSI',
+    infoTitle:'RSI',
+    infoText:'Mede a força e a velocidade dos movimentos de preço. Valores altos indicam maior pressão compradora recente; valores baixos, maior pressão vendedora.',
+    defaultConfig:{study:'rsi',period:14,levelLow:30,levelMid:50,levelHigh:70,color:'#dbe4ee',visible:true}
+  },
+  volume:{
+    label:'Volume',
+    attach:attachVolumeMenu,
+    activatedMessage:'Volume ativado',
+    configMessage:'Configuração do volume',
+    infoTitle:'Volume',
+    infoText:'Mostra a quantidade negociada em cada candle. Ajuda a observar a intensidade e a confirmação dos movimentos de preço.',
+    defaultConfig:{study:'volume',showAverage:true,averagePeriod:20,averageType:'sma',upColor:'#4ade80',downColor:'#f87171',averageColor:'#f59e0b',visible:true}
+  },
+  macd:{
+    label:'MACD',
+    attach:attachMacdMenu,
+    activatedMessage:'MACD 12/26/9 ativado',
+    configMessage:'Configuração do MACD',
+    infoTitle:'MACD',
+    infoText:'Compara médias móveis para mostrar mudanças de tendência e momentum. A linha MACD, a linha de sinal e o histograma ajudam a visualizar aceleração ou desaceleração.',
+    defaultConfig:{study:'macd',fastPeriod:12,slowPeriod:26,signalPeriod:9,source:'close',macdColor:'#dbe4ee',signalColor:'#f59e0b',upColor:'#4ade80',downColor:'#f87171',visible:true}
+  },
+  bollinger:{
+    label:'Bollinger',
+    attach:attachBollingerMenu,
+    activatedMessage:'Bollinger 20 · 2 ativado',
+    configMessage:'Configuração das Bandas de Bollinger',
+    infoTitle:'Bandas de Bollinger',
+    infoText:'Cria uma média móvel central e bandas acima e abaixo dela com base na volatilidade. A distância entre as bandas aumenta ou diminui conforme a volatilidade muda.',
+    defaultConfig:{study:'bollinger',period:20,multiplier:2,source:'close',showMiddle:true,upperColor:'#60a5fa',middleColor:'#f59e0b',lowerColor:'#60a5fa',showFill:true,fillColor:'#60a5fa',visible:true}
+  }
+};
+
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const INITIAL_CANDLES=120;
 const DATA_OPTIONS={currency:'USD'};
@@ -342,14 +381,34 @@ export async function bootstrap(){
     }
   });
 
-  const studyMenus=[
-    {id:'rsi',attach:attachRsiMenu},
-    {id:'volume',attach:attachVolumeMenu},
-    {id:'macd',attach:attachMacdMenu},
-    {id:'bollinger',attach:attachBollingerMenu}
-  ];
+  function ensureStudy(id){
+    const definition=STUDIES[id];
+    if(!definition) return null;
+    let config=studyConfigs.find(item=>item.study===id);
+    if(!config){
+      config={...definition.defaultConfig};
+      studyConfigs=[...studyConfigs,config];
+      active?.chart?.setStudies(studyConfigs);
+    }
+    return config;
+  }
 
-  studyMenus.forEach(({id,attach})=>{
+  function toggleStudy(id){
+    const definition=STUDIES[id];
+    if(!definition) return;
+    const existing=studyConfigs.find(item=>item.study===id);
+    if(!existing){
+      ensureStudy(id);
+      status.textContent=definition.activatedMessage;
+      return;
+    }
+    const visible=existing.visible!==false;
+    studyConfigs=studyConfigs.map(item=>item.study===id?{...item,visible:!visible}:item);
+    active?.chart?.setStudies(studyConfigs);
+    status.textContent=`${definition.label} ${visible?'ocultado':'mostrado'}`;
+  }
+
+  Object.entries(STUDIES).forEach(([id,{attach}])=>{
     studyMenuCleanups[id]=attach({
       anchor:drawingMoreButton,
       getConfig:()=>studyConfigs.find(item=>item.study===id)||null,
@@ -363,101 +422,15 @@ export async function bootstrap(){
   drawingToolsMenuCleanup=attachDrawingToolsMenu({
     button:drawingMoreButton,
     onStudyLongPress:(selection)=>{
-      if(selection?.value==='rsi'){
-        const exists=studyConfigs.some(item=>item.study==='rsi');
-        if(!exists){
-          studyConfigs=[...studyConfigs,{study:'rsi',period:14,levelLow:30,levelMid:50,levelHigh:70,color:'#dbe4ee',visible:true}];
-          active?.chart?.setStudies(studyConfigs);
-        }
-        studyMenuCleanups.rsi?.open?.(studyConfigs.find(item=>item.study==='rsi'));
-        status.textContent='Configuração do RSI';
-      }
-       if(selection?.value==='volume'){
-        const exists=studyConfigs.some(item=>item.study==='volume');
-        if(!exists){
-          studyConfigs=[...studyConfigs,{study:'volume',showAverage:true,averagePeriod:20,averageType:'sma',upColor:'#4ade80',downColor:'#f87171',averageColor:'#f59e0b',visible:true}];
-          active?.chart?.setStudies(studyConfigs);
-        }
-        studyMenuCleanups.volume?.open?.(studyConfigs.find(item=>item.study==='volume'));
-        status.textContent='Configuração do volume';
-      }
-       if(selection?.value==='macd'){
-        const exists=studyConfigs.some(item=>item.study==='macd');
-        if(!exists){
-          studyConfigs=[...studyConfigs,{study:'macd',fastPeriod:12,slowPeriod:26,signalPeriod:9,source:'close',macdColor:'#dbe4ee',signalColor:'#f59e0b',upColor:'#4ade80',downColor:'#f87171',visible:true}];
-          active?.chart?.setStudies(studyConfigs);
-        }
-        studyMenuCleanups.macd?.open?.(studyConfigs.find(item=>item.study==='macd'));
-        status.textContent='Configuração do MACD';
-      }
-       if(selection?.value==='bollinger'){
-        const exists=studyConfigs.some(item=>item.study==='bollinger');
-        if(!exists){
-          studyConfigs=[...studyConfigs,{study:'bollinger',period:20,multiplier:2,source:'close',showMiddle:true,upperColor:'#60a5fa',middleColor:'#f59e0b',lowerColor:'#60a5fa',showFill:true,fillColor:'#60a5fa',visible:true}];
-          active?.chart?.setStudies(studyConfigs);
-        }
-        studyMenuCleanups.bollinger?.open?.(studyConfigs.find(item=>item.study==='bollinger'));
-        status.textContent='Configuração das Bandas de Bollinger';
-      }
-   },
+      const id=selection?.value;
+      if(!STUDIES[id]) return;
+      ensureStudy(id);
+      studyMenuCleanups[id]?.open?.(studyConfigs.find(item=>item.study===id));
+      status.textContent=STUDIES[id].configMessage;
+    },
     onSelect:(selection)=>{
       if(selection?.type==='study'){
-        if(selection.value==='rsi'){
-          const exists=studyConfigs.some(item=>item.study==='rsi');
-          if(!exists){
-            studyConfigs=[...studyConfigs,{study:'rsi',period:14,levelLow:30,levelMid:50,levelHigh:70,color:'#dbe4ee',visible:true}];
-            active?.chart?.setStudies(studyConfigs);
-            status.textContent='RSI 14 ativado';
-          }else{
-            const current=studyConfigs.find(item=>item.study==='rsi');
-            const visible=current?.visible!==false;
-            studyConfigs=studyConfigs.map(item=>item.study==='rsi'?{...item,visible:!visible}:item);
-            active?.chart?.setStudies(studyConfigs);
-            status.textContent=visible?'RSI ocultado':'RSI mostrado';
-          }
-        }
-        if(selection.value==='volume'){
-          const exists=studyConfigs.some(item=>item.study==='volume');
-          if(!exists){
-            studyConfigs=[...studyConfigs,{study:'volume',showAverage:true,averagePeriod:20,averageType:'sma',upColor:'#4ade80',downColor:'#f87171',averageColor:'#f59e0b',visible:true}];
-            active?.chart?.setStudies(studyConfigs);
-            status.textContent='Volume ativado';
-          }else{
-            const current=studyConfigs.find(item=>item.study==='volume');
-            const visible=current?.visible!==false;
-            studyConfigs=studyConfigs.map(item=>item.study==='volume'?{...item,visible:!visible}:item);
-            active?.chart?.setStudies(studyConfigs);
-            status.textContent=visible?'Volume ocultado':'Volume mostrado';
-          }
-        }
-        if(selection.value==='macd'){
-          const exists=studyConfigs.some(item=>item.study==='macd');
-          if(!exists){
-            studyConfigs=[...studyConfigs,{study:'macd',fastPeriod:12,slowPeriod:26,signalPeriod:9,source:'close',macdColor:'#dbe4ee',signalColor:'#f59e0b',upColor:'#4ade80',downColor:'#f87171',visible:true}];
-            active?.chart?.setStudies(studyConfigs);
-            status.textContent='MACD 12/26/9 ativado';
-          }else{
-            const current=studyConfigs.find(item=>item.study==='macd');
-            const visible=current?.visible!==false;
-            studyConfigs=studyConfigs.map(item=>item.study==='macd'?{...item,visible:!visible}:item);
-            active?.chart?.setStudies(studyConfigs);
-            status.textContent=visible?'MACD ocultado':'MACD mostrado';
-          }
-        }
-        if(selection.value==='bollinger'){
-          const exists=studyConfigs.some(item=>item.study==='bollinger');
-          if(!exists){
-            studyConfigs=[...studyConfigs,{study:'bollinger',period:20,multiplier:2,source:'close',showMiddle:true,upperColor:'#60a5fa',middleColor:'#f59e0b',lowerColor:'#60a5fa',showFill:true,fillColor:'#60a5fa',visible:true}];
-            active?.chart?.setStudies(studyConfigs);
-            status.textContent='Bollinger 20 · 2 ativado';
-          }else{
-            const current=studyConfigs.find(item=>item.study==='bollinger');
-            const visible=current?.visible!==false;
-            studyConfigs=studyConfigs.map(item=>item.study==='bollinger'?{...item,visible:!visible}:item);
-            active?.chart?.setStudies(studyConfigs);
-            status.textContent=visible?'Bollinger ocultado':'Bollinger mostrado';
-          }
-        }
+        if(STUDIES[selection.value]) toggleStudy(selection.value);
         return;
       }
       const tool=selection;
