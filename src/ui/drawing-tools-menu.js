@@ -15,8 +15,18 @@ export function attachDrawingToolsMenu({ button, onSelect }) {
       <span class="drawing-tools-icon">⌖</span>
       <span><strong>Referência</strong><small>Fixar um ponto para comparação</small></span>
     </button>
-    <div class="drawing-tools-section">EM BREVE</div>
-    <div class="drawing-tools-coming">Canal · Régua · Texto</div>
+    <button type="button" data-drawing-tool="channel">
+      <span class="drawing-tools-icon">∥</span>
+      <span><strong>Canal</strong><small>Duas linhas paralelas</small></span>
+    </button>
+    <button type="button" data-drawing-tool="ruler">
+      <span class="drawing-tools-icon">↗</span>
+      <span><strong>Régua</strong><small>Preço, variação e tempo</small></span>
+    </button>
+    <button type="button" data-drawing-tool="text">
+      <span class="drawing-tools-icon">T</span>
+      <span><strong>Texto</strong><small>Anotar diretamente no gráfico</small></span>
+    </button>
   `;
 
   document.body.appendChild(menu);
