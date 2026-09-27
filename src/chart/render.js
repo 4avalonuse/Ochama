@@ -166,27 +166,6 @@ function drawStudies(ctx, candles, state, plot, studies) {
   });
 }
 
-function getPaneStudies(studies) {
-  if (!studies.length) return [];
-  return listStudies()
-    .filter(study => study.placement === 'pane')
-    .map(study => ({
-      study,
-      configs: studies.filter(item => studyId(item) === study.id)
-    }))
-    .filter(entry => entry.configs.length);
-}
-
-function createPanePlot(width, top, height, mainPlot) {
-  return {
-    left: mainPlot.left,
-    right: mainPlot.right,
-    top,
-    width: mainPlot.width,
-    height: Math.max(1, height)
-  };
-}
-
 function drawLine(ctx, candles, state, plot) {
   const visible = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
   if (visible.length < 2) return;
@@ -228,7 +207,6 @@ export function createChart(host, candles, viewport, drawingManager = null) {
   let selectedDrawingId = null;
   let chartType = 'candle';
   let movingAverages = [];
-  let studyConfigs = [];
 
   function resize() {
     const rect = host.getBoundingClientRect();
@@ -251,12 +229,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     if (!candles.length || !finite(state.y.min) || !finite(state.y.max) || state.y.max <= state.y.min) return;
     if (state.yScaleType === 'logarithmic' && state.y.min <= 0) return;
 
-    const paneStudies = getPaneStudies(studyConfigs);
-    const hasPanes = paneStudies.length > 0;
-    const paneGap = hasPanes ? 10 : 0;
-    const paneHeight = hasPanes ? Math.min(150, Math.max(92, height * 0.25)) : 0;
-    const mainHeight = Math.max(220, height - paneHeight - paneGap);
-    const plot = createPlotGeometry(width, mainHeight);
+    const plot = createPlotGeometry(width, height);
 
     drawGrid(ctx, width, height, plot, state.y.min, state.y.max, normalizeScaleType(state.yScaleType), state.x.min, state.x.max);
     if (chartType === 'line') drawLine(ctx, candles, state, plot);
@@ -295,10 +268,6 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     draw();
   }
 
-  function setStudies(next) {
-    studyConfigs = Array.isArray(next) ? next.map(item => ({ ...item })) : [];
-    draw();
-  }
 
   function setSelectedDrawingId(id) {
     selectedDrawingId = id || null;
@@ -321,7 +290,6 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     setSelectedDrawingId,
     setChartType,
     setMovingAverages,
-    setStudies,
     destroy() {
       observer.disconnect();
       canvas.remove();
