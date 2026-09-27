@@ -346,9 +346,15 @@ export async function bootstrap(){
       if(selection?.type==='study'){
         if(selection.value==='rsi'){
           const exists=studyConfigs.some(item=>item.study==='rsi');
-          studyConfigs=exists ? studyConfigs.filter(item=>item.study!=='rsi') : [...studyConfigs,{study:'rsi',period:14,visible:true}];
-          active?.chart?.setStudies(studyConfigs);
-          status.textContent=exists?'RSI ocultado':'RSI 14 ativado';
+          if(!exists){
+            studyConfigs=[...studyConfigs,{study:'rsi',period:14,visible:true}];
+            active?.chart?.setStudies(studyConfigs);
+            active?.chart?.openStudyPanel?.('rsi');
+            status.textContent='RSI 14 ativado · configuração aberta';
+          }else{
+            active?.chart?.openStudyPanel?.('rsi');
+            status.textContent='Configuração do RSI';
+          }
         }
         return;
       }
