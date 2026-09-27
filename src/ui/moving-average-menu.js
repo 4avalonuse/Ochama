@@ -5,9 +5,10 @@ function optionMarkup(items){
 }
 
 const DEFAULTS=[
-  {type:'sma',period:21,source:'close',color:'#f59e0b'},
+  {type:'sma',period:13,source:'close',color:'#f59e0b'},
   {type:'ema',period:55,source:'close',color:'#a78bfa'},
-  {type:'sma',period:89,source:'close',color:'#22d3ee'}
+  // 377/2 = 188.5; período de MA é inteiro, então usamos 189 (arredondamento).
+  {type:'sma',period:189,source:'close',color:'#22d3ee'}
 ];
 
 export function attachMovingAverageMenu({button,onChange}){
