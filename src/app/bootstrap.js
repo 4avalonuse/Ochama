@@ -57,6 +57,7 @@ export async function bootstrap(){
   let movingAverageConfigs=[];
   let studyConfigs=[];
   let studyConfigs=[];
+  let studyConfigs=[];
   let fibonacciMenuCleanup=()=>{};
   let drawingToolsMenuCleanup=()=>{};
   const textEditor=createTextEditor();
@@ -129,6 +130,7 @@ export async function bootstrap(){
     const chart=createChart(chartHost,candles,viewport,drawingManager);
     chart.setChartType(chartTypeButton?.getAttribute('aria-pressed') === 'true' ? 'line' : 'candle');
     chart.setMovingAverages(movingAverageConfigs);
+    chart.setStudies(studyConfigs);
     chart.setStudies(studyConfigs);
     chart.setStudies(studyConfigs);
 
