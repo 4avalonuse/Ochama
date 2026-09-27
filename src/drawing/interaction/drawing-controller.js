@@ -122,20 +122,21 @@ export function createDrawingInteraction({
       if (channelAdjusting && channelDraft) {
         channelAdjustingGesture = true;
         channelDraft = { ...channelDraft, third: market };
+        const preview = descriptor?.tool?.().create?.(
+          channelDraft.start,
+          channelDraft.end,
+          viewport.getYScaleType(),
+          drawingColor,
+          { ...baseOptions, thirdPoint: market }
+        );
+        if (preview) drawPreview?.(preview);
+        return;
+      }
 
-      const preview = descriptor?.tool?.().create?.(
-        channelDraft.start,
-        channelDraft.end,
-        viewport.getYScaleType(),
-        drawingColor,
-        { ...baseOptions, thirdPoint: market }
-      );
-      if (preview) drawPreview?.(preview);
+      draftStart = market;
+      drawPreview?.(null);
       return;
     }
-
-    // Canal: primeiro gesto = A→B como uma Line.
-    if (activeTool === 'channel') return;
 
     // Outras ferramentas multi-ponto continuam no fluxo legado.
     draftPoints.push(market);
