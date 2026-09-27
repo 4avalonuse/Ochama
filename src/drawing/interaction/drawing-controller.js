@@ -43,8 +43,7 @@ export function createDrawingInteraction({
     clearPreview: () => drawPreview?.(null),
     commitDrawing: drawing => {
       drawingManager.add(drawing);
-      selectedId = drawing.id;
-      selection.setSelectedId(selectedId);
+      selection.setSelectedId(drawing.id);
       draw();
       onChanged?.();
       onComplete?.();
@@ -67,10 +66,7 @@ export function createDrawingInteraction({
     draftStart = null;
     draftPoints = [];
     channelInteraction.reset();
-    moving = null;
-    movementRecorded = false;
-    selectedId = null;
-    selection.setSelectedId(selectedId);
+    selection.setSelectedId(null);
     drawPreview?.(null);
     return true;
   }
@@ -110,8 +106,7 @@ export function createDrawingInteraction({
       );
       if (!drawing) return;
       drawingManager.add(drawing);
-      selectedId = drawing.id;
-      selection.setSelectedId(selectedId);
+      selection.setSelectedId(drawing.id);
       draw();
       onChanged?.();
       onComplete?.();
@@ -141,8 +136,7 @@ export function createDrawingInteraction({
       drawPreview?.(null);
       if (!drawing) return;
       drawingManager.add(drawing);
-      selectedId = drawing.id;
-      selection.setSelectedId(selectedId);
+      selection.setSelectedId(drawing.id);
       draw();
       onChanged?.();
       onComplete?.();
@@ -247,6 +241,7 @@ export function createDrawingInteraction({
     setColor(color) {
       if (typeof color !== 'string' || !/^#[0-9a-f]{6}$/i.test(color)) return false;
       drawingColor = color;
+      const selectedId = selection.getSelectedId();
       if (selectedId) {
         const drawing = drawingManager.getDrawings().find(item => item.id === selectedId);
         if (drawing) {
