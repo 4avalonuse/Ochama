@@ -195,7 +195,7 @@ export function createDrawingInteraction({
         channelDraft.end,
         viewport.getYScaleType(),
         drawingColor,
-        { ...baseOptions, thirdPoint: market }
+        { ...options, thirdPoint: market }
       );
       if (preview) drawPreview?.(preview);
       return;
