@@ -11,7 +11,8 @@ export function channelTool(){
       const a=toScaleValue(start.price,type), b=toScaleValue(end.price,type), t=(third.timestamp-start.timestamp)/(end.timestamp-start.timestamp||1), thirdValue=toScaleValue(third.price,type);
       const offsetScaled=Number.isFinite(a)&&Number.isFinite(b)&&Number.isFinite(thirdValue)?thirdValue-(a+(b-a)*t):0;
       return {id:crypto.randomUUID(),type:'channel',scaleType:type,color,
-        start:{...start},end:{...end},third:{...third},offsetScaled};
+        start:{...start},end:{...end},third:{...third},offsetScaled,
+        extendLeft:Boolean(options.extendLeft),extendRight:Boolean(options.extendRight)};
     }
   };
 }
@@ -32,9 +33,18 @@ function build(d,transform){
   if(!Number.isFinite(third))return null;
   const offset=Number.isFinite(d.offsetScaled)?d.offsetScaled:third-base;
   const lines=[0,offset];
-  const points=lines.map(offset=>{
+  const points=lines.map(lineOffset=>{
     const out=[];
-    for(let i=0;i<=SEGMENTS;i++){const u=i/SEGMENTS;const ts=d.start.timestamp+span*u;const scaled=a+(b-a)*u+offset;const price=fromScaleValue(scaled,d.scaleType);const p=transform.marketToScreen({timestamp:ts,price});if(p)out.push(p);}
+    const left=d.extendLeft?-1:0;
+    const right=d.extendRight?2:1;
+    for(let i=0;i<=SEGMENTS;i++){
+      const u=left+(right-left)*(i/SEGMENTS);
+      const ts=d.start.timestamp+span*u;
+      const scaled=a+(b-a)*u+lineOffset;
+      const price=fromScaleValue(scaled,d.scaleType);
+      const p=transform.marketToScreen({timestamp:ts,price});
+      if(p)out.push(p);
+    }
     return out;
   });
   return points;
@@ -43,6 +53,11 @@ export function channelRenderer(ctx,d,transform,o={}){
   const lines=build(d,transform); if(!lines?.[0]?.length||!lines?.[1]?.length)return;
   ctx.save(); ctx.strokeStyle=d.color||'#60a5fa'; ctx.lineWidth=o.selected?2.5:1.7;
   for(const pts of lines){ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();}
+  if(o.selected){
+    const handles=[d.start,d.end,d.third].map(point=>transform.marketToScreen(point)).filter(Boolean);
+    ctx.fillStyle=d.color||'#60a5fa';
+    for(const p of handles){ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();}
+  }
   ctx.restore();
 }
 function pointLineDistance(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy;const t=l?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/l)):0;return Math.hypot(p.x-(a.x+t*dx),p.y-(a.y+t*dy));}
