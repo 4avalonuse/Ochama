@@ -229,6 +229,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
   let paneRatio = 0.25;
   let paneControls = null;
   let paneDragCleanup = null;
+  let panePanelCleanup = null;
 
   function resize() {
     const rect = host.getBoundingClientRect();
@@ -264,19 +265,42 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
       paneControls = null;
       paneDragCleanup?.();
       paneDragCleanup = null;
+      panePanelCleanup?.();
+      panePanelCleanup = null;
     } else if (!paneControls) {
       paneControls = document.createElement('div');
       paneControls.className = 'study-pane-controls';
-      paneControls.innerHTML = '<div class="study-pane-resize" role="separator" aria-label="Redimensionar painel RSI" title="Arraste para redimensionar"><span></span></div><button type="button" class="study-pane-close" aria-label="Fechar painel" title="Fechar painel">×</button>';
+      paneControls.innerHTML = '<div class="study-pane-header"></div><div class="study-pane-resize" role="separator" aria-label="Redimensionar painel de estudo" title="Arraste para redimensionar"><span></span></div><button type="button" class="study-pane-close" aria-label="Fechar painel" title="Fechar painel">×</button>';
       host.appendChild(paneControls);
 
+      const paneStudy = paneStudies[0]?.study;
+      const paneConfig = paneStudies[0]?.configs?.[0] || {};
+      const panelHost = paneControls.querySelector('.study-pane-header');
+
+      if (paneStudy?.createPanelControls && panelHost) {
+        panePanelCleanup = paneStudy.createPanelControls({
+          container: panelHost,
+          config: paneConfig,
+          onChange: nextConfig => {
+            studyConfigs = studyConfigs.map(item =>
+              studyId(item) === paneStudy.id ? { ...item, ...nextConfig } : item
+            );
+            options.onPaneChange?.(studyConfigs);
+            draw();
+          }
+        });
+      }
+
       paneControls.querySelector('.study-pane-close')?.addEventListener('click', () => {
-        studyConfigs = [];
+        studyConfigs = studyConfigs.filter(item => studyId(item) !== paneStudy?.id);
+        panePanelCleanup?.();
+        panePanelCleanup = null;
         paneControls?.remove();
         paneControls = null;
         paneDragCleanup?.();
         paneDragCleanup = null;
         options.onPaneClose?.();
+        options.onPaneChange?.(studyConfigs);
         draw();
       });
 
@@ -380,6 +404,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     },
     destroy() {
       paneDragCleanup?.();
+      panePanelCleanup?.();
       paneControls?.remove();
       observer.disconnect();
       canvas.remove();
