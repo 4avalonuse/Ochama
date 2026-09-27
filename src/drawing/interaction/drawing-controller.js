@@ -2,6 +2,7 @@ import { createDrawingTransform } from '../render/transform.js';
 import { createPlotGeometry } from '../../chart/plot-geometry.js';
 import { getDrawingTool } from '../core/drawing-registry.js';
 import { createChannelInteraction } from './channel-interaction.js';
+import { createDrawingSelection } from './drawing-selection.js';
 
 function pointFromEvent(event, canvas) {
   const rect = canvas.getBoundingClientRect();
@@ -27,14 +28,10 @@ export function createDrawingInteraction({
 }) {
   let activeTool = 'line';
   let draftStart = null;
-  let selectedId = null;
-  let moving = null;
-  let movementRecorded = false;
-  let drawingColor = '#60a5fa';
+    let drawingColor = '#60a5fa';
   let fibonacciMode = 'retracement';
   let draftPoints = [];
   let requestText = null;
-  let lastTextTap = { time: 0, x: 0, y: 0 };
 
   const channelInteraction = createChannelInteraction({
     getDescriptor: () => getDrawingTool('channel'),
@@ -47,16 +44,22 @@ export function createDrawingInteraction({
     commitDrawing: drawing => {
       drawingManager.add(drawing);
       selectedId = drawing.id;
-      syncSelection();
+      selection.setSelectedId(selectedId);
       draw();
       onChanged?.();
       onComplete?.();
     }
   });
 
-  function syncSelection() {
-    drawSelection?.(selectedId);
-  }
+  const selection = createDrawingSelection({
+    canvas,
+    viewport,
+    drawingManager,
+    draw,
+    drawSelection,
+    getTextEditor: () => requestText,
+    onChanged
+  });
 
   function setTool(type) {
     if (!getDrawingTool(type)) return false;
@@ -67,22 +70,9 @@ export function createDrawingInteraction({
     moving = null;
     movementRecorded = false;
     selectedId = null;
-    syncSelection();
+    selection.setSelectedId(selectedId);
     drawPreview?.(null);
     return true;
-  }
-
-  function selectAt(point) {
-    const transform = createTransform(viewport, canvas);
-    const drawings = drawingManager.getDrawings();
-    for (let i = drawings.length - 1; i >= 0; i -= 1) {
-      const drawing = drawings[i];
-      const descriptor = getDrawingTool(drawing.type);
-      const part = descriptor?.hitTestPart?.(point, drawing, transform);
-      if (part) return { drawing, part };
-      if (descriptor?.hitTest?.(point, drawing, transform)) return { drawing, part: 'body' };
-    }
-    return null;
   }
 
   function drawingDown(event) {
@@ -108,7 +98,7 @@ export function createDrawingInteraction({
           if (!drawing) return;
           drawingManager.add(drawing);
           selectedId = drawing.id;
-          syncSelection();
+          selection.setSelectedId(selectedId);
           draw();
           onChanged?.();
           onComplete?.();
@@ -121,7 +111,7 @@ export function createDrawingInteraction({
       if (!drawing) return;
       drawingManager.add(drawing);
       selectedId = drawing.id;
-      syncSelection();
+      selection.setSelectedId(selectedId);
       draw();
       onChanged?.();
       onComplete?.();
@@ -152,7 +142,7 @@ export function createDrawingInteraction({
       if (!drawing) return;
       drawingManager.add(drawing);
       selectedId = drawing.id;
-      syncSelection();
+      selection.setSelectedId(selectedId);
       draw();
       onChanged?.();
       onComplete?.();
@@ -232,83 +222,10 @@ export function createDrawingInteraction({
 
     drawingManager.add(drawing);
     selectedId = drawing.id;
-    syncSelection();
+    selection.setSelectedId(selectedId);
     draw();
     onChanged?.();
     onComplete?.();
-  }
-
-  function selectionDown(event) {
-    const point = pointFromEvent(event, canvas);
-    const hit = selectAt(point);
-    const now = performance.now();
-    const isDoubleTextTap = Boolean(
-      hit?.drawing?.type === 'text' &&
-      now - lastTextTap.time < 380 &&
-      Math.hypot(point.x - lastTextTap.x, point.y - lastTextTap.y) < 18
-    );
-
-    lastTextTap = { time: now, x: point.x, y: point.y };
-    selectedId = hit?.drawing?.id || null;
-    syncSelection();
-
-    if (isDoubleTextTap) {
-      const textDrawing = hit.drawing;
-      Promise.resolve(requestText?.(textDrawing.text || '')).then(value => {
-        if (value == null || !drawingManager.getDrawings().some(item => item.id === textDrawing.id)) return;
-        drawingManager.replace(textDrawing.id, { ...textDrawing, text: value }, true);
-        selectedId = textDrawing.id;
-        syncSelection();
-        draw();
-        onChanged?.();
-      });
-      return;
-    }
-    if (!hit?.drawing) {
-      moving = null;
-      draw();
-      return;
-    }
-
-    const descriptor = getDrawingTool(hit.drawing.type);
-    if (!descriptor?.move) return;
-
-    moving = {
-      id: hit.drawing.id,
-      type: hit.drawing.type,
-      part: hit.part || 'body',
-      last: point
-    };
-    movementRecorded = false;
-    draw();
-  }
-
-  function selectionMove(event) {
-    if (!moving) return;
-    const point = pointFromEvent(event, canvas);
-    const dx = point.x - moving.last.x;
-    const dy = point.y - moving.last.y;
-    if (!dx && !dy) return;
-
-    const drawing = drawingManager.getDrawings().find(item => item.id === moving.id);
-    const descriptor = drawing ? getDrawingTool(drawing.type) : null;
-    const transform = createTransform(viewport, canvas);
-
-    if (drawing && descriptor?.move) {
-      const next = descriptor.move(drawing, { dx, dy }, transform, moving.part);
-      if (next) {
-        drawingManager.replace(drawing.id, next, !movementRecorded);
-        movementRecorded = true;
-        moving.last = point;
-        draw();
-      }
-    }
-  }
-
-  function selectionUp() {
-    if (moving) onChanged?.();
-    moving = null;
-    movementRecorded = false;
   }
 
   return {
@@ -340,34 +257,20 @@ export function createDrawingInteraction({
       }
       return true;
     },
-    getSelectedId: () => selectedId,
+    getSelectedId: () => selection.getSelectedId(),
     deleteSelected() {
-      if (!selectedId) return false;
-      drawingManager.remove(selectedId);
-      selectedId = null;
-      syncSelection();
-      draw();
-      onChanged?.();
-      return true;
+      return selection.deleteSelected();
     },
     clearAll() {
-      const cleared = drawingManager.clear();
-      if (!cleared) return false;
-      selectedId = null;
-      syncSelection();
-      moving = null;
-      movementRecorded = false;
-      draw();
-      onChanged?.();
-      return true;
+      return selection.clearAll();
     },
     handlers: {
       onDrawingDown: drawingDown,
       onDrawingMove: drawingMove,
       onDrawingUp: drawingUp,
-      onSelectionDown: selectionDown,
-      onSelectionMove: selectionMove,
-      onSelectionUp: selectionUp
+      onSelectionDown: selection.onDown,
+      onSelectionMove: selection.onMove,
+      onSelectionUp: selection.onUp
     }
   };
 }
