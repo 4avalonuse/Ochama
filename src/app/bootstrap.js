@@ -17,7 +17,7 @@ import { attachVolumeMenu } from '../ui/volume-menu.js?v=20260927-32';
 import { attachMacdMenu } from '../ui/macd-menu.js?v=20260927-33';
 import { attachBollingerMenu } from '../ui/bollinger-menu.js?v=20260927-34';
 import { attachAtrMenu } from '../ui/atr-menu.js';
-import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
+import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js?v=20260927-38';
 import { createTextEditor } from '../ui/text-editor.js';
 
 const STUDIES={
