@@ -116,27 +116,13 @@ export function createDrawingInteraction({
 
     const pointCount = Math.max(2, Number(descriptor?.pointCount) || 2);
 
-    // Canal: a primeira fase reaproveita exatamente o gesto de Line.
-    if (activeTool === 'channel' && !channelAdjusting) {
-      draftStart = market;
-      drawPreview?.(null);
-      return;
-    }
+    // Canal: fluxo próprio em duas fases.
+    // Fase 1 = A→B. Fase 2 = segundo toque/gesto define a largura.
+    if (activeTool === 'channel') {
+      if (channelAdjusting && channelDraft) {
+        channelAdjustingGesture = true;
+        channelDraft = { ...channelDraft, third: market };
 
-    // Ferramentas de 2 pontos continuam no gesto clássico: pressionar/arrastar/soltar.
-    if (pointCount === 2) {
-      draftStart = market;
-      drawPreview?.(null);
-      return;
-    }
-
-    if (activeTool === 'channel' && channelAdjusting) {
-      channelAdjustingGesture = true;
-      channelDraft = {
-        start: channelDraft.start,
-        end: channelDraft.end,
-        third: market
-      };
       const preview = descriptor?.tool?.().create?.(
         channelDraft.start,
         channelDraft.end,
