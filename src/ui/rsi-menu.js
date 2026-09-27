@@ -6,16 +6,42 @@ export function attachRsiMenu({anchor,onChange,getConfig}){
   menu.hidden=true;
   menu.innerHTML=`
     <div class="rsi-config-head">
-      <div class="rsi-config-title">RSI</div>
+      <div>
+        <div class="rsi-config-title">Configurar RSI</div>
+        <div class="rsi-config-subtitle">Cálculo e níveis do indicador</div>
+      </div>
       <button type="button" class="rsi-config-close" aria-label="Fechar configuração do RSI" title="Fechar">×</button>
     </div>
-    <div class="rsi-config-grid">
-      <label>Período<input data-rsi-period type="number" min="2" max="100" step="1" inputmode="numeric"></label>
-      <label>Baixa<input data-rsi-low type="number" min="0" max="100" step="1" inputmode="numeric"></label>
-      <label>Meio<input data-rsi-mid type="number" min="0" max="100" step="1" inputmode="numeric"></label>
-      <label>Alta<input data-rsi-high type="number" min="0" max="100" step="1" inputmode="numeric"></label>
-      <label>Cor<input data-rsi-color type="color"></label>
+    <div class="rsi-config-section">
+      <div class="rsi-config-section-title">CÁLCULO</div>
+      <label class="rsi-config-field">
+        <span>Período</span>
+        <input data-rsi-period type="number" min="2" max="100" step="1" inputmode="numeric">
+      </label>
     </div>
+    <div class="rsi-config-section">
+      <div class="rsi-config-section-title">NÍVEIS</div>
+      <label class="rsi-config-field">
+        <span>Sobrecomprado</span>
+        <input data-rsi-high type="number" min="0" max="100" step="1" inputmode="numeric">
+      </label>
+      <label class="rsi-config-field">
+        <span>Neutro</span>
+        <input data-rsi-mid type="number" min="0" max="100" step="1" inputmode="numeric">
+      </label>
+      <label class="rsi-config-field">
+        <span>Sobrevendido</span>
+        <input data-rsi-low type="number" min="0" max="100" step="1" inputmode="numeric">
+      </label>
+    </div>
+    <div class="rsi-config-section rsi-config-color-section">
+      <div class="rsi-config-section-title">LINHA</div>
+      <label class="rsi-config-field rsi-config-color-field">
+        <span>Cor</span>
+        <input data-rsi-color type="color">
+      </label>
+    </div>
+    <div class="rsi-config-hint">Toque fora para fechar</div>
   `;
   document.body.appendChild(menu);
 
