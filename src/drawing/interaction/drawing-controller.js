@@ -142,7 +142,7 @@ export function createDrawingInteraction({
         channelDraft.end,
         viewport.getYScaleType(),
         drawingColor,
-        { ...baseOptions, thirdPoint: market }
+        { ...options, thirdPoint: market }
       );
       if (preview) drawPreview?.(preview);
       return;
@@ -307,9 +307,6 @@ export function createDrawingInteraction({
     if (pointCount >= 3) return;
     if (!draftStart) return;
 
-    const point = pointFromEvent(event, canvas);
-    const transform = createTransform(viewport, canvas);
-    const end = transform.screenToMarket(point);
     const start = draftStart;
     draftStart = null;
     drawPreview?.(null);
