@@ -13,6 +13,7 @@ import '../drawing/tools/index.js';
 import { attachMovingAverageMenu } from '../ui/moving-average-menu.js';
 import { attachFibonacciMenu } from '../ui/fibonacci-menu.js';
 import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
+import { createTextEditor } from '../ui/text-editor.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const INITIAL_CANDLES=120;
@@ -56,6 +57,7 @@ export async function bootstrap(){
   let movingAverageConfigs=[];
   let fibonacciMenuCleanup=()=>{};
   let drawingToolsMenuCleanup=()=>{};
+  const textEditor=createTextEditor();
 
   const PROVIDER_SYMBOLS={
     yahoo:{'BTC-USD':'BTC-USD','SOL-USD':'SOL-USD'},
@@ -143,6 +145,7 @@ export async function bootstrap(){
       onChanged:drawingChanged,
       onComplete:()=>setToolbarMode('navigation')
     });
+    drawingInteraction.setTextEditor(textEditor.open);
 
     activeDrawingInteraction=drawingInteraction;
 
@@ -278,6 +281,7 @@ export async function bootstrap(){
     movingAverageCleanup?.();
     fibonacciMenuCleanup?.();
     drawingToolsMenuCleanup?.();
+    textEditor.destroy();
     saveActiveState();
     if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
   });
