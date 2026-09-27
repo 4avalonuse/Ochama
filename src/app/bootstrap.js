@@ -55,6 +55,7 @@ export async function bootstrap(){
   let active=null;
   let activeDrawingInteraction=null;
   let movingAverageConfigs=[];
+  let studyConfigs=[];
   let fibonacciMenuCleanup=()=>{};
   let drawingToolsMenuCleanup=()=>{};
   const textEditor=createTextEditor();
@@ -127,6 +128,7 @@ export async function bootstrap(){
     const chart=createChart(chartHost,candles,viewport,drawingManager);
     chart.setChartType(chartTypeButton?.getAttribute('aria-pressed') === 'true' ? 'line' : 'candle');
     chart.setMovingAverages(movingAverageConfigs);
+    chart.setStudies(studyConfigs);
 
     const persist=()=>{
       stateStore.save(
@@ -332,7 +334,20 @@ export async function bootstrap(){
 
   drawingToolsMenuCleanup=attachDrawingToolsMenu({
     button:drawingMoreButton,
-    onSelect:(tool)=>{
+    onSelect:(selection)=>{
+      if(selection?.type==='study'){
+        if(selection.value==='rsi'){
+          const exists=studyConfigs.some(item=>item.study==='rsi');
+          studyConfigs=exists
+            ? studyConfigs.filter(item=>item.study!=='rsi')
+            : [...studyConfigs,{study:'rsi',period:14,visible:true}];
+          active?.chart?.setStudies(studyConfigs);
+          status.textContent=exists?'RSI ocultado':'RSI 14 ativado';
+        }
+        return;
+      }
+
+      const tool=selection?.value;
       if(!['rectangle','reference','channel','ruler','text'].includes(tool)) return;
       activeDrawingInteraction?.setTool(tool);
       setToolbarMode('drawing');
