@@ -236,20 +236,6 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     else drawCandles(ctx, candles, state, plot);
     drawStudies(ctx, candles, state, plot, movingAverages);
 
-    if (hasPanes) {
-      const paneTop = mainHeight + paneGap + 18;
-      const panePlotHeight = Math.max(1, paneHeight - 42);
-      paneStudies.forEach(({ study, configs }) => {
-        study.render(ctx, {
-          candles,
-          state,
-          plot: createPanePlot(width, paneTop, panePlotHeight, plot),
-          config: configs[0],
-          configs,
-          toScaleValue
-        });
-      });
-    }
 
     if (drawingManager) {
       const transform = createDrawingTransform({ viewport, plot });
