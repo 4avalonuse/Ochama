@@ -110,7 +110,7 @@ function render(ctx, { candles, plot, config = {} }) {
   ctx.restore();
 }
 
-function createPanelControls({ container, config = {}, onChange, open = false }) {
+function createPanelControls({ container, config = {}, onChange, onOpenChange, open = false }) {
   const current = {
     period: Math.max(2, Math.floor(Number(config.period) || 14)),
     levelLow: Number(config.levelLow) || 30,
@@ -166,13 +166,17 @@ function createPanelControls({ container, config = {}, onChange, open = false })
   configButton?.addEventListener('click', event => {
     event.preventDefault();
     event.stopPropagation();
-    settings.hidden = !settings.hidden;
+    const nextOpen = settings.hidden;
+    settings.hidden = !nextOpen;
+    configButton?.setAttribute('aria-expanded', String(nextOpen));
+    onOpenChange?.(nextOpen);
   });
 
   Object.values(fields).forEach(field => field?.addEventListener('change', emit));
   sync();
   settings.hidden = !open;
   configButton?.setAttribute('aria-expanded', String(open));
+  onOpenChange?.(open);
 
   return () => {};
 }
