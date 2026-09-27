@@ -144,6 +144,10 @@ function drawCandles(ctx, candles, state, plot) {
 
   ctx.restore();
 }
+function studyId(item) {
+  return item.study || (item.type === 'sma' || item.type === 'ema' ? 'moving-average' : null);
+}
+
 function drawStudies(ctx, candles, state, plot, studies) {
   if (!studies.length) return;
 
@@ -156,13 +160,31 @@ function drawStudies(ctx, candles, state, plot, studies) {
 
   listStudies().forEach(study => {
     if (study.placement !== 'overlay') return;
-    const configs = studies.filter(item => {
-      const type = item.study || (item.type === 'sma' || item.type === 'ema' ? 'moving-average' : null);
-      return type === study.id;
-    });
+    const configs = studies.filter(item => studyId(item) === study.id);
     if (!configs.length) return;
-    study.render(ctx, { ...context, studies: configs });
+    study.render(ctx, { ...context, studies: configs, config: configs[0] });
   });
+}
+
+function getPaneStudies(studies) {
+  if (!studies.length) return [];
+  return listStudies()
+    .filter(study => study.placement === 'pane')
+    .map(study => ({
+      study,
+      configs: studies.filter(item => studyId(item) === study.id)
+    }))
+    .filter(entry => entry.configs.length);
+}
+
+function createPanePlot(width, top, height, mainPlot) {
+  return {
+    left: mainPlot.left,
+    right: mainPlot.right,
+    top,
+    width: mainPlot.width,
+    height: Math.max(1, height)
+  };
 }
 
 function drawLine(ctx, candles, state, plot) {
@@ -206,6 +228,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
   let selectedDrawingId = null;
   let chartType = 'candle';
   let movingAverages = [];
+  let studyConfigs = [];
 
   function resize() {
     const rect = host.getBoundingClientRect();
@@ -228,12 +251,32 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     if (!candles.length || !finite(state.y.min) || !finite(state.y.max) || state.y.max <= state.y.min) return;
     if (state.yScaleType === 'logarithmic' && state.y.min <= 0) return;
 
-    const plot = createPlotGeometry(width, height);
+    const paneStudies = getPaneStudies(studyConfigs);
+    const hasPanes = paneStudies.length > 0;
+    const paneGap = hasPanes ? 10 : 0;
+    const paneHeight = hasPanes ? Math.min(150, Math.max(92, height * 0.25)) : 0;
+    const mainHeight = Math.max(220, height - paneHeight - paneGap);
+    const plot = createPlotGeometry(width, mainHeight);
 
     drawGrid(ctx, width, height, plot, state.y.min, state.y.max, normalizeScaleType(state.yScaleType), state.x.min, state.x.max);
     if (chartType === 'line') drawLine(ctx, candles, state, plot);
     else drawCandles(ctx, candles, state, plot);
     drawStudies(ctx, candles, state, plot, movingAverages);
+
+    if (hasPanes) {
+      const paneTop = mainHeight + paneGap + 18;
+      const panePlotHeight = Math.max(1, paneHeight - 42);
+      paneStudies.forEach(({ study, configs }) => {
+        study.render(ctx, {
+          candles,
+          state,
+          plot: createPanePlot(width, paneTop, panePlotHeight, plot),
+          config: configs[0],
+          configs,
+          toScaleValue
+        });
+      });
+    }
 
     if (drawingManager) {
       const transform = createDrawingTransform({ viewport, plot });
@@ -249,6 +292,11 @@ export function createChart(host, candles, viewport, drawingManager = null) {
 
   function setMovingAverages(next) {
     movingAverages = Array.isArray(next) ? next.map(item => ({ ...item })) : [];
+    draw();
+  }
+
+  function setStudies(next) {
+    studyConfigs = Array.isArray(next) ? next.map(item => ({ ...item })) : [];
     draw();
   }
 
@@ -273,6 +321,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     setSelectedDrawingId,
     setChartType,
     setMovingAverages,
+    setStudies,
     destroy() {
       observer.disconnect();
       canvas.remove();
