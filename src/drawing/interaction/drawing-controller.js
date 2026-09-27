@@ -31,6 +31,7 @@ export function createDrawingInteraction({
   let movementRecorded = false;
   let drawingColor = '#60a5fa';
   let fibonacciMode = 'retracement';
+  let draftPoints = [];
 
   function syncSelection() {
     drawSelection?.(selectedId);
@@ -40,6 +41,7 @@ export function createDrawingInteraction({
     if (!getDrawingTool(type)) return false;
     activeTool = type;
     draftStart = null;
+    draftPoints = [];
     moving = null;
     movementRecorded = false;
     selectedId = null;
@@ -68,25 +70,21 @@ export function createDrawingInteraction({
     if (!market) return;
 
     const descriptor = getDrawingTool(activeTool);
-    const options = {
+    const document = drawingManager.getDocument();
+    const baseOptions = {
       mode: fibonacciMode,
-      context: (() => {
-        const document = drawingManager.getDocument();
-        return {
-          symbol: document.symbol,
-          provider: document.provider,
-          interval: document.interval
-        };
-      })()
+      context: { symbol: document.symbol, provider: document.provider, interval: document.interval }
     };
 
     if (descriptor?.singlePoint) {
+      const options = { ...baseOptions };
+      if (activeTool === 'text') {
+        const value = window.prompt('Texto da anotação:', 'Texto');
+        if (value === null) return;
+        options.text = value.trim() || 'Texto';
+      }
       const drawing = descriptor.tool?.().create?.(
-        market,
-        null,
-        viewport.getYScaleType(),
-        drawingColor,
-        options
+        market, null, viewport.getYScaleType(), drawingColor, options
       );
       if (!drawing) return;
       drawingManager.add(drawing);
@@ -98,19 +96,37 @@ export function createDrawingInteraction({
       return;
     }
 
-    draftStart = market;
-    const preview = descriptor?.tool?.().create?.(
-      market,
-      market,
-      viewport.getYScaleType(),
-      drawingColor,
-      options
+    const pointCount = Math.max(2, Number(descriptor?.pointCount) || 2);
+    draftPoints.push(market);
+
+    if (draftPoints.length < pointCount) {
+      draftStart = draftPoints[0];
+      return;
+    }
+
+    const startPoint = draftPoints[0];
+    const endPoint = draftPoints[1];
+    const options = { ...baseOptions };
+    if (pointCount >= 3) options.thirdPoint = draftPoints[2];
+
+    const drawing = descriptor?.tool?.().create?.(
+      startPoint, endPoint, viewport.getYScaleType(), drawingColor, options
     );
-    if (preview) drawPreview?.(preview);
+    draftPoints = [];
+    draftStart = null;
+    drawPreview?.(null);
+    if (!drawing) return;
+
+    drawingManager.add(drawing);
+    selectedId = drawing.id;
+    syncSelection();
+    draw();
+    onChanged?.();
+    onComplete?.();
   }
 
   function drawingMove(event) {
-    if (!draftStart) return;
+    if (!draftPoints.length) return;
     const point = pointFromEvent(event, canvas);
     const transform = createTransform(viewport, canvas);
     const market = transform.screenToMarket(point);
@@ -118,22 +134,21 @@ export function createDrawingInteraction({
 
     const descriptor = getDrawingTool(activeTool);
     const document = drawingManager.getDocument();
+    const options = {
+      mode: fibonacciMode,
+      context: { symbol: document.symbol, provider: document.provider, interval: document.interval }
+    };
+    const pointCount = Math.max(2, Number(descriptor?.pointCount) || 2);
+    const startPoint = draftPoints[0];
+    const endPoint = draftPoints[1] || market;
+    if (pointCount >= 3 && draftPoints.length >= 2) options.thirdPoint = market;
+
     const preview = descriptor?.tool?.().create?.(
-      draftStart,
-      market,
-      viewport.getYScaleType(),
-      drawingColor,
-      {
-        mode: fibonacciMode,
-        context: {
-          symbol: document.symbol,
-          provider: document.provider,
-          interval: document.interval
-        }
-      }
+      startPoint, endPoint, viewport.getYScaleType(), drawingColor, options
     );
     if (preview) drawPreview?.(preview);
   }
+
 
   function drawingUp(event) {
     if (!draftStart) return;
