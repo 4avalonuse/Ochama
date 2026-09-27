@@ -67,9 +67,45 @@ export function createDrawingInteraction({
     const market = transform.screenToMarket(point);
     if (!market) return;
 
-    draftStart = market;
     const descriptor = getDrawingTool(activeTool);
-    const preview = descriptor?.tool?.().create?.(market, market, viewport.getYScaleType(), drawingColor, { mode: fibonacciMode });
+    const options = {
+      mode: fibonacciMode,
+      context: (() => {
+        const document = drawingManager.getDocument();
+        return {
+          symbol: document.symbol,
+          provider: document.provider,
+          interval: document.interval
+        };
+      })()
+    };
+
+    if (descriptor?.singlePoint) {
+      const drawing = descriptor.tool?.().create?.(
+        market,
+        null,
+        viewport.getYScaleType(),
+        drawingColor,
+        options
+      );
+      if (!drawing) return;
+      drawingManager.add(drawing);
+      selectedId = drawing.id;
+      syncSelection();
+      draw();
+      onChanged?.();
+      onComplete?.();
+      return;
+    }
+
+    draftStart = market;
+    const preview = descriptor?.tool?.().create?.(
+      market,
+      market,
+      viewport.getYScaleType(),
+      drawingColor,
+      options
+    );
     if (preview) drawPreview?.(preview);
   }
 
@@ -81,7 +117,21 @@ export function createDrawingInteraction({
     if (!market) return;
 
     const descriptor = getDrawingTool(activeTool);
-    const preview = descriptor?.tool?.().create?.(draftStart, market, viewport.getYScaleType(), drawingColor, { mode: fibonacciMode });
+    const document = drawingManager.getDocument();
+    const preview = descriptor?.tool?.().create?.(
+      draftStart,
+      market,
+      viewport.getYScaleType(),
+      drawingColor,
+      {
+        mode: fibonacciMode,
+        context: {
+          symbol: document.symbol,
+          provider: document.provider,
+          interval: document.interval
+        }
+      }
+    );
     if (preview) drawPreview?.(preview);
   }
 
@@ -96,7 +146,21 @@ export function createDrawingInteraction({
     if (!end) return;
 
     const descriptor = getDrawingTool(activeTool);
-    const drawing = descriptor?.tool?.().create?.(start, end, viewport.getYScaleType(), drawingColor, { mode: fibonacciMode });
+    const document = drawingManager.getDocument();
+    const drawing = descriptor?.tool?.().create?.(
+      start,
+      end,
+      viewport.getYScaleType(),
+      drawingColor,
+      {
+        mode: fibonacciMode,
+        context: {
+          symbol: document.symbol,
+          provider: document.provider,
+          interval: document.interval
+        }
+      }
+    );
     if (!drawing) return;
 
     drawingManager.add(drawing);
