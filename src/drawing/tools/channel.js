@@ -7,8 +7,11 @@ export function channelTool(){
   return { type:'channel', pointCount:3, defaults:{},
     create(start,end,scaleType='linear',color='#60a5fa',options={}){
       const third=options.thirdPoint||end;
-      return {id:crypto.randomUUID(),type:'channel',scaleType:normalizeScaleType(scaleType),color,
-        start:{...start},end:{...end},third:{...third}};
+      const type=normalizeScaleType(scaleType);
+      const a=toScaleValue(start.price,type), b=toScaleValue(end.price,type), t=(third.timestamp-start.timestamp)/(end.timestamp-start.timestamp||1), thirdValue=toScaleValue(third.price,type);
+      const offsetScaled=Number.isFinite(a)&&Number.isFinite(b)&&Number.isFinite(thirdValue)?thirdValue-(a+(b-a)*t):0;
+      return {id:crypto.randomUUID(),type:'channel',scaleType:type,color,
+        start:{...start},end:{...end},third:{...third},offsetScaled};
     }
   };
 }
@@ -27,8 +30,8 @@ function build(d,transform){
   const base=a+(b-a)*t;
   const third=toScaleValue(d.third.price,d.scaleType);
   if(!Number.isFinite(third))return null;
-  d.offsetScaled=Number.isFinite(d.offsetScaled)?d.offsetScaled:third-base;
-  const lines=[0,d.offsetScaled];
+  const offset=Number.isFinite(d.offsetScaled)?d.offsetScaled:third-base;
+  const lines=[0,offset];
   const points=lines.map(offset=>{
     const out=[];
     for(let i=0;i<=SEGMENTS;i++){const u=i/SEGMENTS;const ts=d.start.timestamp+span*u;const scaled=a+(b-a)*u+offset;const price=fromScaleValue(scaled,d.scaleType);const p=transform.marketToScreen({timestamp:ts,price});if(p)out.push(p);}
