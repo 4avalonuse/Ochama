@@ -226,6 +226,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
   let chartType = 'candle';
   let movingAverages = [];
   let studyConfigs = [];
+  let studyConfigs = [];
 
   function resize() {
     const rect = host.getBoundingClientRect();
@@ -291,6 +292,11 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     draw();
   }
 
+  function setStudies(next) {
+    studyConfigs = Array.isArray(next) ? next.map(item => ({ ...item })) : [];
+    draw();
+  }
+
   function setMovingAverages(next) {
     movingAverages = Array.isArray(next) ? next.map(item => ({ ...item })) : [];
     draw();
@@ -318,6 +324,7 @@ export function createChart(host, candles, viewport, drawingManager = null) {
     setSelectedDrawingId,
     setChartType,
     setMovingAverages,
+    setStudies,
     setStudies,
     destroy() {
       observer.disconnect();
