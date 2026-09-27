@@ -297,7 +297,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
 
         const onPointerUp = () => {
           window.removeEventListener('pointermove', onPointerMove);
-          window.removeEventListener('pointerup', onPointerMove);
+          window.removeEventListener('pointerup', onPointerUp);
         };
 
         window.addEventListener('pointermove', onPointerMove, { passive: false });
