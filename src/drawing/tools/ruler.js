@@ -41,4 +41,4 @@ export function rulerRenderer(ctx,d,transform,o={}){
 export function rulerHitTestPart(p,d,t){for(const k of['start','end']){const q=t.marketToScreen(d[k]);if(q&&Math.hypot(p.x-q.x,p.y-q.y)<=12)return k;}return null}
 export function rulerHitTest(p,d,t,tol=9){const a=t.marketToScreen(d.start),b=t.marketToScreen(d.end);return a&&b&&distancePointToSegment(p,a,b)<=tol}
 export function rulerMove(d,delta,t,part='body'){if(part==='start'||part==='end'){const q=t.marketToScreen(d[part]);if(!q)return null;const n=t.screenToMarket({x:q.x+delta.dx,y:q.y+delta.dy});return n?{...d,[part]:n}:null}const a=t.marketToScreen(d.start),b=t.marketToScreen(d.end);if(!a||!b)return null;const na=t.screenToMarket({x:a.x+delta.dx,y:a.y+delta.dy}),nb=t.screenToMarket({x:b.x+delta.dx,y:b.y+delta.dy});return na&&nb?{...d,start:na,end:nb}:null}
-registerDrawingTool({type:'ruler',name:'Régua',tool:rulerTool,renderer:rulerRenderer,hitTest:rulerHitTest,hitTestPart:rulerHitTestPart,move:rulerMove,defaults:{}});
+registerDrawingTool({type:'ruler',name:'Régua',pointCount:2,tool:rulerTool,renderer:rulerRenderer,hitTest:rulerHitTest,hitTestPart:rulerHitTestPart,move:rulerMove,defaults:{}});
