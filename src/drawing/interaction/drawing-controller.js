@@ -1,4 +1,4 @@
-import { createDrawingTransform } from '../render/transform.js';
+import { createDrawingTransform } from '../render/transform.js?v=20260927-29';
 import { createPlotGeometry } from '../../chart/plot-geometry.js';
 import { getDrawingTool } from '../core/drawing-registry.js';
 import { createChannelInteraction } from './channel-interaction.js';
