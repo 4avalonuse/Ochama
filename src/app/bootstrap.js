@@ -373,8 +373,11 @@ export async function bootstrap(){
             active?.chart?.setStudies(studyConfigs);
             status.textContent='RSI 14 ativado';
           }else{
+            const current=studyConfigs.find(item=>item.study==='rsi');
+            const visible=current?.visible!==false;
+            studyConfigs=studyConfigs.map(item=>item.study==='rsi'?{...item,visible:!visible}:item);
             active?.chart?.setStudies(studyConfigs);
-            status.textContent='RSI 14 já ativo';
+            status.textContent=visible?'RSI ocultado':'RSI mostrado';
           }
         }
         return;
