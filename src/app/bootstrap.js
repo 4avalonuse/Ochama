@@ -125,7 +125,15 @@ export async function bootstrap(){
     if(savedState)viewport.setState(savedState);
 
     const drawingManager=createDrawingManager({symbol,provider,interval,drawings:savedDrawings.drawings});
-    const chart=createChart(chartHost,candles,viewport,drawingManager);
+    const chart=createChart(chartHost,candles,viewport,drawingManager,{
+      onPaneChange:next=>{
+        studyConfigs=Array.isArray(next)?next.map(item=>({...item})):[];
+      },
+      onPaneClose:()=>{
+        studyConfigs=studyConfigs.filter(item=>item.study!=='rsi');
+        status.textContent='Painel de estudos fechado';
+      }
+    });
     chart.setChartType(chartTypeButton?.getAttribute('aria-pressed') === 'true' ? 'line' : 'candle');
     chart.setMovingAverages(movingAverageConfigs);
     chart.setStudies(studyConfigs);
