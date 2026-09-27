@@ -19,6 +19,10 @@ export function attachDrawingToolsMenu({ button, onSelect, onStudyLongPress }) {
       <span class="drawing-tools-icon">MACD</span>
       <span><strong>MACD</strong><small>Tendência e momentum · painel inferior</small></span>
     </button>
+    <button type="button" data-study="bollinger">
+      <span class="drawing-tools-icon">BB</span>
+      <span><strong>Bollinger</strong><small>Volatilidade · sobre o preço</small></span>
+    </button>
     <div class="drawing-tools-section">DESENHAR</div>
     <button type="button" data-drawing-tool="rectangle">
       <span class="drawing-tools-icon">□</span>
