@@ -19,6 +19,7 @@ import { attachBollingerMenu } from '../ui/bollinger-menu.js?v=20260927-34';
 import { attachAtrMenu } from '../ui/atr-menu.js';
 import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
 import { createTextEditor } from '../ui/text-editor.js';
+import { createStudyInfo } from '../ui/study-info.js';
 
 const STUDIES={
   atr:{
@@ -113,6 +114,7 @@ export async function bootstrap(){
   let drawingToolsMenuCleanup=()=>{};
   const studyMenuCleanups={};
   const textEditor=createTextEditor();
+  const studyInfo=createStudyInfo();
 
   const PROVIDER_SYMBOLS={
     yahoo:{'BTC-USD':'BTC-USD','SOL-USD':'SOL-USD'},
@@ -354,6 +356,7 @@ export async function bootstrap(){
     movingAverageCleanup?.();
     fibonacciMenuCleanup?.();
     drawingToolsMenuCleanup?.();
+    studyInfo.destroy();
     Object.values(studyMenuCleanups).forEach(cleanup=>cleanup?.destroy?.());
     textEditor.destroy();
     saveActiveState();
@@ -431,6 +434,11 @@ export async function bootstrap(){
 
   drawingToolsMenuCleanup=attachDrawingToolsMenu({
     button:drawingMoreButton,
+    onStudyInfo:(selection)=>{
+      const definition=STUDIES[selection?.value];
+      if(!definition) return;
+      studyInfo.open({title:definition.infoTitle||definition.label,text:definition.infoText||'Informação não disponível.'});
+    },
     onStudyLongPress:(selection)=>{
       const id=selection?.value;
       if(!STUDIES[id]) return;
