@@ -117,7 +117,7 @@ button,
 .drawing-tools-menu button{width:100%;display:flex;align-items:center;gap:9px;padding:8px;border:1px solid #27364a;border-radius:8px;background:#101823;color:#dbe4ee;text-align:left;touch-action:manipulation}
 .drawing-tools-menu button:hover{border-color:#40546d;background:#162230}
 .drawing-tools-menu button:active{transform:translateY(1px)}
-.drawing-tools-icon{width:24px;height:24px;display:grid;place-items:center;border:1px solid #40546d;border-radius:6px;color:#9fc5ee;font-size:17px;line-height:1}
+.drawing-tools-icon{min-width:38px;width:38px;height:24px;display:grid;place-items:center;border:1px solid #40546d;border-radius:6px;color:#9fc5ee;font-size:12px;line-height:1;box-sizing:border-box}
 .drawing-tools-menu button strong{display:block;font-size:10px;font-weight:850}
 .drawing-tools-menu button small{display:block;margin-top:2px;color:#778598;font-size:9px}
 .drawing-tools-coming{padding:5px 2px 1px;color:#667487;font-size:9px;line-height:1.4}
