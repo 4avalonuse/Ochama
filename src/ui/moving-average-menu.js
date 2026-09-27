@@ -36,6 +36,8 @@ export function attachMovingAverageMenu({button,onChange}){
   const addButton=menu.querySelector('[data-ma-add]');
   const list=menu.querySelector('[data-ma-list]');
   let items=DEFAULTS.map(item=>normalizeMovingAverage(item));
+  let longPressTimer=null;
+  let suppressClick=false;
 
   function emit(){ onChange?.(items.map(item=>({...item}))); }
 
@@ -85,9 +87,38 @@ export function attachMovingAverageMenu({button,onChange}){
     button.setAttribute('aria-expanded',String(open));
   }
 
-  function toggle(event){
+  function toggleVisibility(){
+    const anyVisible=items.some(item=>item.visible);
+    items=items.map(item=>({...item,visible:!anyVisible}));
+    renderList();
+    emit();
+    button.setAttribute('aria-label',anyVisible?'Mostrar médias':'Ocultar médias');
+    button.title=anyVisible?'Mostrar médias':'Ocultar médias';
+  }
+
+  function onButtonClick(event){
     event.stopPropagation();
-    setOpen(menu.hidden);
+    if(suppressClick){
+      suppressClick=false;
+      return;
+    }
+    toggleVisibility();
+  }
+
+  function onButtonPointerDown(event){
+    if(event.pointerType==='mouse' && event.button!==0) return;
+    longPressTimer=window.setTimeout(()=>{
+      longPressTimer=null;
+      suppressClick=true;
+      setOpen(true);
+    },550);
+  }
+
+  function onButtonPointerUp(){
+    if(longPressTimer){
+      window.clearTimeout(longPressTimer);
+      longPressTimer=null;
+    }
   }
 
   function onDocumentPointerDown(event){
@@ -96,7 +127,10 @@ export function attachMovingAverageMenu({button,onChange}){
     setOpen(false);
   }
 
-  button.addEventListener('click',toggle);
+  button.addEventListener('click',onButtonClick);
+  button.addEventListener('pointerdown',onButtonPointerDown);
+  button.addEventListener('pointerup',onButtonPointerUp);
+  button.addEventListener('pointercancel',onButtonPointerUp);
   addButton.addEventListener('click',add);
   list.addEventListener('change',event=>{
     const row=event.target.closest('[data-ma-id]');
@@ -120,9 +154,15 @@ export function attachMovingAverageMenu({button,onChange}){
 
   renderList();
   emit();
+  button.setAttribute('aria-label','Ocultar médias');
+  button.title='Ocultar médias';
 
   return ()=>{
-    button.removeEventListener('click',toggle);
+    button.removeEventListener('click',onButtonClick);
+    button.removeEventListener('pointerdown',onButtonPointerDown);
+    button.removeEventListener('pointerup',onButtonPointerUp);
+    button.removeEventListener('pointercancel',onButtonPointerUp);
+    if(longPressTimer) window.clearTimeout(longPressTimer);
     addButton.removeEventListener('click',add);
     document.removeEventListener('pointerdown',onDocumentPointerDown);
     menu.remove();
