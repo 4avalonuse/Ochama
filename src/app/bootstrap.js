@@ -12,6 +12,7 @@ import { createDrawingInteraction } from '../drawing/interaction/drawing-control
 import '../drawing/tools/index.js';
 import { attachMovingAverageMenu } from '../ui/moving-average-menu.js';
 import { attachFibonacciMenu } from '../ui/fibonacci-menu.js';
+import { attachRsiMenu } from '../ui/rsi-menu.js';
 import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
 import { createTextEditor } from '../ui/text-editor.js';
 
@@ -58,6 +59,7 @@ export async function bootstrap(){
   let studyConfigs=[];
   let fibonacciMenuCleanup=()=>{};
   let drawingToolsMenuCleanup=()=>{};
+  let rsiMenuCleanup=()=>{};
   const textEditor=createTextEditor();
 
   const PROVIDER_SYMBOLS={
@@ -340,6 +342,15 @@ export async function bootstrap(){
     }
   });
 
+  rsiMenuCleanup=attachRsiMenu({
+    anchor:drawingMoreButton,
+    getConfig:()=>studyConfigs.find(item=>item.study==='rsi') || null,
+    onChange:nextConfig=>{
+      studyConfigs=studyConfigs.map(item=>item.study==='rsi'?{...item,...nextConfig}:item);
+      active?.chart?.setStudies(studyConfigs);
+    }
+  });
+
   drawingToolsMenuCleanup=attachDrawingToolsMenu({
     button:drawingMoreButton,
     onSelect:(selection)=>{
@@ -347,12 +358,12 @@ export async function bootstrap(){
         if(selection.value==='rsi'){
           const exists=studyConfigs.some(item=>item.study==='rsi');
           if(!exists){
-            studyConfigs=[...studyConfigs,{study:'rsi',period:14,visible:true}];
+            studyConfigs=[...studyConfigs,{study:'rsi',period:14,levelLow:30,levelMid:50,levelHigh:70,color:'#dbe4ee',visible:true}];
             active?.chart?.setStudies(studyConfigs);
-            active?.chart?.openStudyPanel?.('rsi');
-            status.textContent='RSI 14 ativado · configuração aberta';
+            rsiMenuCleanup.open?.(studyConfigs.find(item=>item.study==='rsi'));
+            status.textContent='RSI 14 ativado · configuração';
           }else{
-            active?.chart?.openStudyPanel?.('rsi');
+            rsiMenuCleanup.open?.(studyConfigs.find(item=>item.study==='rsi'));
             status.textContent='Configuração do RSI';
           }
         }
