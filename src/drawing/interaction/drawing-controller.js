@@ -265,7 +265,7 @@ export function createDrawingInteraction({
     }
 
     // Canal: o primeiro release encerra A→B e entra no ajuste da largura.
-    if (activeTool === 'channel' && !channelAdjusting) {
+    if (activeTool === 'channel' && isChannelState(channelState, CHANNEL_DRAWING_BASE)) {
       if (!draftStart || !end) {
         draftStart = null;
         drawPreview?.(null);
