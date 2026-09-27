@@ -4,7 +4,7 @@ import { toScaleValue, fromScaleValue, normalizeScaleType } from '../../viewport
 const SEGMENTS=120;
 
 export function channelTool(){
-  return { type:'channel', pointCount:3, defaults:{},
+  return { type:'channel', pointCount:2, defaults:{},
     create(start,end,scaleType='linear',color='#60a5fa',options={}){
       const third=options.thirdPoint||end;
       const type=normalizeScaleType(scaleType);
