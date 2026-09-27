@@ -13,6 +13,7 @@ import '../drawing/tools/index.js';
 import { attachMovingAverageMenu } from '../ui/moving-average-menu.js';
 import { attachFibonacciMenu } from '../ui/fibonacci-menu.js?v=20260927-29';
 import { attachRsiMenu } from '../ui/rsi-menu.js?v=20260927-27';
+import { attachVolumeMenu } from '../ui/volume-menu.js?v=20260927-32';
 import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
 import { createTextEditor } from '../ui/text-editor.js';
 
@@ -60,6 +61,7 @@ export async function bootstrap(){
   let fibonacciMenuCleanup=()=>{};
   let drawingToolsMenuCleanup=()=>{};
   let rsiMenuCleanup=()=>{};
+  let volumeMenuCleanup=()=>{};
   const textEditor=createTextEditor();
 
   const PROVIDER_SYMBOLS={
@@ -131,8 +133,8 @@ export async function bootstrap(){
       onPaneChange:next=>{
         studyConfigs=Array.isArray(next)?next.map(item=>({...item})):[];
       },
-      onPaneClose:()=>{
-        studyConfigs=studyConfigs.filter(item=>item.study!=='rsi');
+      onPaneClose:studyId=>{
+        studyConfigs=studyConfigs.filter(item=>item.study!==studyId);
         status.textContent='Painel de estudos fechado';
       }
     });
@@ -302,6 +304,8 @@ export async function bootstrap(){
     movingAverageCleanup?.();
     fibonacciMenuCleanup?.();
     drawingToolsMenuCleanup?.();
+    rsiMenuCleanup?.destroy?.();
+    volumeMenuCleanup?.destroy?.();
     textEditor.destroy();
     saveActiveState();
     if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
@@ -347,6 +351,8 @@ export async function bootstrap(){
     }
   });
 
+  volumeMenuCleanup=attachVolumeMenu({anchor:drawingMoreButton,getConfig:()=>studyConfigs.find(item=>item.study==='volume')||null,onChange:next=>{studyConfigs=studyConfigs.map(item=>item.study==='volume'?{...item,...next}:item);active?.chart?.setStudies(studyConfigs);}});
+
   drawingToolsMenuCleanup=attachDrawingToolsMenu({
     button:drawingMoreButton,
     onStudyLongPress:(selection)=>{
@@ -359,7 +365,16 @@ export async function bootstrap(){
         rsiMenuCleanup.open?.(studyConfigs.find(item=>item.study==='rsi'));
         status.textContent='Configuração do RSI';
       }
-    },
+       if(selection?.value==='volume'){
+        const exists=studyConfigs.some(item=>item.study==='volume');
+        if(!exists){
+          studyConfigs=[...studyConfigs,{study:'volume',showAverage:true,averagePeriod:20,averageType:'sma',upColor:'#4ade80',downColor:'#f87171',averageColor:'#f59e0b',visible:true}];
+          active?.chart?.setStudies(studyConfigs);
+        }
+        volumeMenuCleanup.open?.(studyConfigs.find(item=>item.study==='volume'));
+        status.textContent='Configuração do volume';
+      }
+   },
     onSelect:(selection)=>{
       if(selection?.type==='study'){
         if(selection.value==='rsi'){
@@ -374,6 +389,20 @@ export async function bootstrap(){
             studyConfigs=studyConfigs.map(item=>item.study==='rsi'?{...item,visible:!visible}:item);
             active?.chart?.setStudies(studyConfigs);
             status.textContent=visible?'RSI ocultado':'RSI mostrado';
+          }
+        }
+        if(selection.value==='volume'){
+          const exists=studyConfigs.some(item=>item.study==='volume');
+          if(!exists){
+            studyConfigs=[...studyConfigs,{study:'volume',showAverage:true,averagePeriod:20,averageType:'sma',upColor:'#4ade80',downColor:'#f87171',averageColor:'#f59e0b',visible:true}];
+            active?.chart?.setStudies(studyConfigs);
+            status.textContent='Volume ativado';
+          }else{
+            const current=studyConfigs.find(item=>item.study==='volume');
+            const visible=current?.visible!==false;
+            studyConfigs=studyConfigs.map(item=>item.study==='volume'?{...item,visible:!visible}:item);
+            active?.chart?.setStudies(studyConfigs);
+            status.textContent=visible?'Volume ocultado':'Volume mostrado';
           }
         }
         return;
