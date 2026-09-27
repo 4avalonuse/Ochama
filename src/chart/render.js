@@ -229,9 +229,6 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
   let paneRatio = 0.25;
   let paneControls = null;
   let paneDragCleanup = null;
-  let panePanelCleanup = null;
-  let openPaneStudyId = null;
-  let panePanelOpen = false;
 
   function resize() {
     const rect = host.getBoundingClientRect();
@@ -256,9 +253,8 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
 
     const paneStudies = getPaneStudies(studyConfigs);
     const paneGap = paneStudies.length ? 12 : 0;
-    const effectivePaneRatio = panePanelOpen ? Math.max(paneRatio, 0.36) : paneRatio;
     const paneHeight = paneStudies.length
-      ? Math.min(height * (panePanelOpen ? 0.55 : 0.45), Math.max(panePanelOpen ? 180 : 110, height * effectivePaneRatio))
+      ? Math.min(height * 0.45, Math.max(110, height * paneRatio))
       : 0;
     const mainHeight = paneStudies.length ? Math.max(1, height - paneHeight - paneGap) : height;
     const plot = createPlotGeometry(width, mainHeight);
@@ -277,34 +273,9 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
       host.appendChild(paneControls);
 
       const paneStudy = paneStudies[0]?.study;
-      const paneConfig = paneStudies[0]?.configs?.[0] || {};
-      const panelHost = paneControls.querySelector('.study-pane-header');
-
-      if (paneStudy?.createPanelControls && panelHost) {
-        panePanelCleanup = paneStudy.createPanelControls({
-          container: panelHost,
-          config: paneConfig,
-          open: openPaneStudyId === paneStudy.id || panePanelOpen,
-          onOpenChange: isOpen => {
-            panePanelOpen = Boolean(isOpen);
-            draw();
-          },
-          onChange: nextConfig => {
-            studyConfigs = studyConfigs.map(item =>
-              studyId(item) === paneStudy.id ? { ...item, ...nextConfig } : item
-            );
-            options.onPaneChange?.(studyConfigs);
-            draw();
-          }
-        });
-        openPaneStudyId = null;
-        panePanelOpen = false;
-      }
 
       paneControls.querySelector('.study-pane-close')?.addEventListener('click', () => {
         studyConfigs = studyConfigs.filter(item => studyId(item) !== paneStudy?.id);
-        panePanelCleanup?.();
-        panePanelCleanup = null;
         paneControls?.remove();
         paneControls = null;
         paneDragCleanup?.();
@@ -350,7 +321,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     if (paneStudies.length) {
       const paneTop = mainHeight + paneGap;
       if (paneControls) paneControls.style.top = mainHeight + 'px';
-      const paneHeaderHeight = panePanelOpen ? 154 : 28;
+      const paneHeaderHeight = 28;
       const panePlotTop = paneTop + paneHeaderHeight;
       const panePlotHeight = Math.max(1, paneHeight - paneHeaderHeight);
       paneStudies.forEach(({ study, configs }) => {
@@ -382,22 +353,6 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     draw();
   }
 
-  function openStudyPanel(studyIdValue) {
-    const paneStudy = getPaneStudies(studyConfigs).find(item => item.study.id === studyIdValue);
-    if (!paneStudy) return false;
-    openPaneStudyId = studyIdValue;
-    panePanelOpen = true;
-    if (!paneControls) draw();
-    const panelHost = paneControls?.querySelector('.study-pane-header');
-    const configButton = panelHost?.querySelector('.study-pane-config');
-    const settings = panelHost?.querySelector('.study-pane-settings');
-    if (!settings) return false;
-    settings.hidden = false;
-    configButton?.setAttribute('aria-expanded', 'true');
-    draw();
-    return true;
-  }
-
   function setMovingAverages(next) {
     movingAverages = Array.isArray(next) ? next.map(item => ({ ...item })) : [];
     draw();
@@ -426,7 +381,6 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     setChartType,
     setMovingAverages,
     setStudies,
-    openStudyPanel,
     setPaneRatio(nextRatio) {
       paneRatio = Math.max(0.15, Math.min(0.45, Number(nextRatio) || 0.25));
       draw();
