@@ -110,81 +110,9 @@ function render(ctx, { candles, plot, config = {} }) {
   ctx.restore();
 }
 
-function createPanelControls({ container, config = {}, onChange, onOpenChange, open = false }) {
-  const current = {
-    period: Math.max(2, Math.floor(Number(config.period) || 14)),
-    levelLow: Number(config.levelLow) || 30,
-    levelMid: Number(config.levelMid) || 50,
-    levelHigh: Number(config.levelHigh) || 70,
-    color: config.color || '#dbe4ee'
-  };
-
-  container.innerHTML = `
-    <div class="study-pane-title">
-      <strong>RSI <span data-rsi-value></span></strong>
-      <button type="button" class="study-pane-config" aria-label="Configurar RSI" title="Configurar RSI">⚙</button>
-    </div>
-    <div class="study-pane-settings" hidden>
-      <label>Período <input data-rsi-period type="number" min="2" max="100" step="1"></label>
-      <label>Baixa <input data-rsi-low type="number" min="0" max="100" step="1"></label>
-      <label>Meio <input data-rsi-mid type="number" min="0" max="100" step="1"></label>
-      <label>Alta <input data-rsi-high type="number" min="0" max="100" step="1"></label>
-      <label>Cor <input data-rsi-color type="color"></label>
-    </div>
-  `;
-
-  const settings = container.querySelector('.study-pane-settings');
-  const configButton = container.querySelector('.study-pane-config');
-  const fields = {
-    period: container.querySelector('[data-rsi-period]'),
-    levelLow: container.querySelector('[data-rsi-low]'),
-    levelMid: container.querySelector('[data-rsi-mid]'),
-    levelHigh: container.querySelector('[data-rsi-high]'),
-    color: container.querySelector('[data-rsi-color]')
-  };
-
-  const sync = () => {
-    fields.period.value = current.period;
-    fields.levelLow.value = current.levelLow;
-    fields.levelMid.value = current.levelMid;
-    fields.levelHigh.value = current.levelHigh;
-    fields.color.value = current.color;
-    const valueNode = container.querySelector('[data-rsi-value]');
-    if (valueNode) valueNode.textContent = current.period;
-  };
-
-  const emit = () => {
-    current.period = Math.max(2, Math.min(100, Math.floor(Number(fields.period.value) || 14)));
-    current.levelLow = Math.max(0, Math.min(100, Number(fields.levelLow.value) || 30));
-    current.levelMid = Math.max(0, Math.min(100, Number(fields.levelMid.value) || 50));
-    current.levelHigh = Math.max(0, Math.min(100, Number(fields.levelHigh.value) || 70));
-    current.color = fields.color.value || '#dbe4ee';
-    sync();
-    onChange?.({ ...current });
-  };
-
-  configButton?.addEventListener('click', event => {
-    event.preventDefault();
-    event.stopPropagation();
-    const nextOpen = settings.hidden;
-    settings.hidden = !nextOpen;
-    configButton?.setAttribute('aria-expanded', String(nextOpen));
-    onOpenChange?.(nextOpen);
-  });
-
-  Object.values(fields).forEach(field => field?.addEventListener('change', emit));
-  sync();
-  settings.hidden = !open;
-  configButton?.setAttribute('aria-expanded', String(open));
-  onOpenChange?.(open);
-
-  return () => {};
-}
-
 registerStudy({
   id: 'rsi',
   name: 'RSI',
   placement: STUDY_PLACEMENTS.PANE,
-  render,
-  createPanelControls
+  render
 });
