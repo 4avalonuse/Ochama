@@ -8,7 +8,7 @@ import { attachFitToggle } from '../ui/fit-toggle.js';
 import { createChartStateStore } from '../storage/chart-state.js';
 import { createDrawingManager } from '../drawing/core/drawing-manager.js';
 import { createDrawingPersistence } from '../drawing/storage/drawing-persistence.js';
-import { createDrawingInteraction } from '../drawing/interaction/drawing-controller.js';
+import { createDrawingInteraction } from '../drawing/interaction/drawing-controller.js?v=20260927-30';
 import '../drawing/tools/index.js';
 import { attachMovingAverageMenu } from '../ui/moving-average-menu.js';
 import { attachFibonacciMenu } from '../ui/fibonacci-menu.js?v=20260927-29';
