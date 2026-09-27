@@ -1,4 +1,4 @@
-import { createDrawingTransform } from '../render/transform.js?v=20260927-29';
+import { createDrawingTransform } from '../render/transform.js?v=20260927-30';
 import { createPlotGeometry } from '../../chart/plot-geometry.js';
 import { getDrawingTool } from '../core/drawing-registry.js';
 import { createChannelInteraction } from './channel-interaction.js';
@@ -121,7 +121,16 @@ export function createDrawingInteraction({
       return;
     }
 
-    // Outras ferramentas multi-ponto continuam no fluxo legado.
+    // Ferramentas de dois pontos usam o mesmo gesto da linha: pressionar,
+    // arrastar com preview vivo e soltar para criar.
+    if (pointCount === 2) {
+      draftStart = market;
+      draftPoints = [];
+      drawPreview?.(null);
+      return;
+    }
+
+    // Ferramentas multi-ponto continuam no fluxo legado.
     draftPoints.push(market);
     draftStart = null;
 
