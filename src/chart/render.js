@@ -264,8 +264,6 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
       paneControls = null;
       paneDragCleanup?.();
       paneDragCleanup = null;
-      panePanelCleanup?.();
-      panePanelCleanup = null;
     } else if (!paneControls) {
       paneControls = document.createElement('div');
       paneControls.className = 'study-pane-controls';
@@ -387,7 +385,6 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     },
     destroy() {
       paneDragCleanup?.();
-      panePanelCleanup?.();
       paneControls?.remove();
       observer.disconnect();
       canvas.remove();
