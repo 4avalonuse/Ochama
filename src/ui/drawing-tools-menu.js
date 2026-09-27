@@ -15,6 +15,10 @@ export function attachDrawingToolsMenu({ button, onSelect, onStudyLongPress }) {
       <span class="drawing-tools-icon">VOL</span>
       <span><strong>Volume</strong><small>Fluxo negociado · painel inferior</small></span>
     </button>
+    <button type="button" data-study="macd">
+      <span class="drawing-tools-icon">MACD</span>
+      <span><strong>MACD</strong><small>Tendência e momentum · painel inferior</small></span>
+    </button>
     <div class="drawing-tools-section">DESENHAR</div>
     <button type="button" data-drawing-tool="rectangle">
       <span class="drawing-tools-icon">□</span>
