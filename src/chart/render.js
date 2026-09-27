@@ -231,6 +231,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
   let paneDragCleanup = null;
   let panePanelCleanup = null;
   let openPaneStudyId = null;
+  let panePanelOpen = false;
 
   function resize() {
     const rect = host.getBoundingClientRect();
@@ -255,8 +256,9 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
 
     const paneStudies = getPaneStudies(studyConfigs);
     const paneGap = paneStudies.length ? 12 : 0;
+    const effectivePaneRatio = panePanelOpen ? Math.max(paneRatio, 0.36) : paneRatio;
     const paneHeight = paneStudies.length
-      ? Math.min(height * 0.45, Math.max(110, height * paneRatio))
+      ? Math.min(height * (panePanelOpen ? 0.55 : 0.45), Math.max(panePanelOpen ? 180 : 110, height * effectivePaneRatio))
       : 0;
     const mainHeight = paneStudies.length ? Math.max(1, height - paneHeight - paneGap) : height;
     const plot = createPlotGeometry(width, mainHeight);
@@ -282,7 +284,11 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
         panePanelCleanup = paneStudy.createPanelControls({
           container: panelHost,
           config: paneConfig,
-          open: openPaneStudyId === paneStudy.id,
+          open: openPaneStudyId === paneStudy.id || panePanelOpen,
+          onOpenChange: isOpen => {
+            panePanelOpen = Boolean(isOpen);
+            draw();
+          },
           onChange: nextConfig => {
             studyConfigs = studyConfigs.map(item =>
               studyId(item) === paneStudy.id ? { ...item, ...nextConfig } : item
@@ -292,6 +298,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
           }
         });
         openPaneStudyId = null;
+        panePanelOpen = false;
       }
 
       paneControls.querySelector('.study-pane-close')?.addEventListener('click', () => {
@@ -343,8 +350,9 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     if (paneStudies.length) {
       const paneTop = mainHeight + paneGap;
       if (paneControls) paneControls.style.top = mainHeight + 'px';
-      const panePlotTop = paneTop + 28;
-      const panePlotHeight = Math.max(1, paneHeight - 28);
+      const paneHeaderHeight = panePanelOpen ? 154 : 28;
+      const panePlotTop = paneTop + paneHeaderHeight;
+      const panePlotHeight = Math.max(1, paneHeight - paneHeaderHeight);
       paneStudies.forEach(({ study, configs }) => {
         study.render(ctx, {
           candles,
@@ -376,13 +384,17 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
 
   function openStudyPanel(studyIdValue) {
     const paneStudy = getPaneStudies(studyConfigs).find(item => item.study.id === studyIdValue);
-    if (!paneStudy || !paneControls) return false;
-    const panelHost = paneControls.querySelector('.study-pane-header');
+    if (!paneStudy) return false;
+    openPaneStudyId = studyIdValue;
+    panePanelOpen = true;
+    if (!paneControls) draw();
+    const panelHost = paneControls?.querySelector('.study-pane-header');
     const configButton = panelHost?.querySelector('.study-pane-config');
     const settings = panelHost?.querySelector('.study-pane-settings');
     if (!settings) return false;
     settings.hidden = false;
     configButton?.setAttribute('aria-expanded', 'true');
+    draw();
     return true;
   }
 
