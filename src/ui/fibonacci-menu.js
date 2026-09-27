@@ -5,17 +5,15 @@ export function attachFibonacciMenu({ button, onActivate, onModeChange }) {
   menu.className = 'fibonacci-menu';
   menu.hidden = true;
   menu.innerHTML = `
-    <div class="fibonacci-title">Fibonacci</div>
+    <div class="fibonacci-title">Modo Fibonacci</div>
+    <div class="fibonacci-subtitle">Escolha o cálculo e desenhe</div>
     <div class="fibonacci-modes">
-      <button type="button" data-fib-mode="retracement" class="is-active">RETRAÇÃO</button>
-      <button type="button" data-fib-mode="extension">EXTENSÃO</button>
+      <button type="button" data-fib-mode="retracement" class="is-active"><strong>RETRAÇÃO</strong><small>Correção do movimento</small></button>
+      <button type="button" data-fib-mode="extension"><strong>EXTENSÃO</strong><small>Projeção além de 100%</small></button>
     </div>
     <div class="fibonacci-help">
-      <strong>Como usar</strong>
-      <span>Toque em FIB para desenhar.</span>
-      <span>Segure FIB para escolher o tipo.</span>
-      <span>Depois toque no início e arraste até o fim.</span>
-      <small>Retração mostra níveis dentro do movimento. Extensão projeta níveis acima de 100% para possíveis alvos.</small>
+      <span><b>1</b> toque no início</span>
+      <span><b>2</b> arraste até o fim</span>
     </div>
   `;
 
