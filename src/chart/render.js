@@ -178,7 +178,7 @@ function drawStudies(ctx, candles, state, plot, studies) {
 
   listStudies().forEach(study => {
     if (study.placement !== 'overlay') return;
-    const configs = studies.filter(item => studyId(item) === study.id);
+    const configs = studies.filter(item => studyId(item) === study.id && item.visible !== false);
     if (!configs.length) return;
     study.render(ctx, { ...context, studies: configs, config: configs[0] });
   });
@@ -314,7 +314,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     drawGrid(ctx, width, height, plot, state.y.min, state.y.max, normalizeScaleType(state.yScaleType), state.x.min, state.x.max);
     if (chartType === 'line') drawLine(ctx, candles, state, plot);
     else drawCandles(ctx, candles, state, plot);
-    drawStudies(ctx, candles, state, plot, movingAverages);
+    drawStudies(ctx, candles, state, plot, [...movingAverages, ...studyConfigs]);
 
     if (paneStudies.length) {
       const paneTop = mainHeight + paneGap;
