@@ -91,3 +91,15 @@
 @media(max-width:480px){
   .fibonacci-menu{top:46px;left:8px;width:calc(100% - 16px);box-sizing:border-box}
 }
+
+/* Chart controls: labels are UI, not selectable text. */
+button,
+.drawing-toolbar,
+.moving-average-button,
+.moving-average-menu,
+.fit-toggle,
+.scale-toggle,
+.chart-type-toggle{user-select:none;-webkit-user-select:none}
+.drawing-tool,
+.moving-average-menu button,
+.fibonacci-menu button{user-select:none;-webkit-user-select:none}
