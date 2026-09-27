@@ -135,16 +135,25 @@ export async function bootstrap(){
       );
     };
 
-    const drawingInteraction=createDrawingInteraction({
-      canvas:chart.canvas,
-      viewport,
-      drawingManager,
-      draw:chart.draw,
-      drawPreview:chart.setDrawingPreview,
-      drawSelection:chart.setSelectedDrawingId,
-      onChanged:drawingChanged,
-      onComplete:()=>setToolbarMode('navigation')
-    });
+    let drawingInteraction;
+    try{
+      drawingInteraction=createDrawingInteraction({
+        canvas:chart.canvas,
+        viewport,
+        drawingManager,
+        draw:chart.draw,
+        drawPreview:chart.setDrawingPreview,
+        drawSelection:chart.setSelectedDrawingId,
+        onChanged:drawingChanged,
+        onComplete:()=>setToolbarMode('navigation')
+      });
+    }catch(error){
+      console.error('[Ochama drawing interaction]',error);
+      status.textContent='Erro na interação de desenho: '+(error?.message||'falha desconhecida');
+      chartHost.classList.remove('is-loading');
+      chartHost.classList.add('is-error');
+      throw error;
+    }
     drawingInteraction.setTextEditor(textEditor.open);
 
     activeDrawingInteraction=drawingInteraction;
