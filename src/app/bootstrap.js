@@ -15,6 +15,7 @@ import { attachFibonacciMenu } from '../ui/fibonacci-menu.js?v=20260927-29';
 import { attachRsiMenu } from '../ui/rsi-menu.js?v=20260927-27';
 import { attachVolumeMenu } from '../ui/volume-menu.js?v=20260927-32';
 import { attachMacdMenu } from '../ui/macd-menu.js?v=20260927-33';
+import { attachBollingerMenu } from '../ui/bollinger-menu.js?v=20260927-34';
 import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
 import { createTextEditor } from '../ui/text-editor.js';
 
@@ -64,6 +65,7 @@ export async function bootstrap(){
   let rsiMenuCleanup=()=>{};
   let volumeMenuCleanup=()=>{};
   let macdMenuCleanup=()=>{};
+  let bollingerMenuCleanup=()=>{};
   const textEditor=createTextEditor();
 
   const PROVIDER_SYMBOLS={
@@ -309,6 +311,7 @@ export async function bootstrap(){
     rsiMenuCleanup?.destroy?.();
     volumeMenuCleanup?.destroy?.();
     macdMenuCleanup?.destroy?.();
+    bollingerMenuCleanup?.destroy?.();
     textEditor.destroy();
     saveActiveState();
     if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
@@ -364,6 +367,15 @@ export async function bootstrap(){
     }
   });
 
+  bollingerMenuCleanup=attachBollingerMenu({
+    anchor:drawingMoreButton,
+    getConfig:()=>studyConfigs.find(item=>item.study==='bollinger')||null,
+    onChange:next=>{
+      studyConfigs=studyConfigs.map(item=>item.study==='bollinger'?{...item,...next}:item);
+      active?.chart?.setStudies(studyConfigs);
+    }
+  });
+
   drawingToolsMenuCleanup=attachDrawingToolsMenu({
     button:drawingMoreButton,
     onStudyLongPress:(selection)=>{
@@ -393,6 +405,15 @@ export async function bootstrap(){
         }
         macdMenuCleanup.open?.(studyConfigs.find(item=>item.study==='macd'));
         status.textContent='Configuração do MACD';
+      }
+       if(selection?.value==='bollinger'){
+        const exists=studyConfigs.some(item=>item.study==='bollinger');
+        if(!exists){
+          studyConfigs=[...studyConfigs,{study:'bollinger',period:20,multiplier:2,source:'close',showMiddle:true,upperColor:'#60a5fa',middleColor:'#f59e0b',lowerColor:'#60a5fa',showFill:true,fillColor:'#60a5fa',visible:true}];
+          active?.chart?.setStudies(studyConfigs);
+        }
+        bollingerMenuCleanup.open?.(studyConfigs.find(item=>item.study==='bollinger'));
+        status.textContent='Configuração das Bandas de Bollinger';
       }
    },
     onSelect:(selection)=>{
@@ -437,6 +458,20 @@ export async function bootstrap(){
             studyConfigs=studyConfigs.map(item=>item.study==='macd'?{...item,visible:!visible}:item);
             active?.chart?.setStudies(studyConfigs);
             status.textContent=visible?'MACD ocultado':'MACD mostrado';
+          }
+        }
+        if(selection.value==='bollinger'){
+          const exists=studyConfigs.some(item=>item.study==='bollinger');
+          if(!exists){
+            studyConfigs=[...studyConfigs,{study:'bollinger',period:20,multiplier:2,source:'close',showMiddle:true,upperColor:'#60a5fa',middleColor:'#f59e0b',lowerColor:'#60a5fa',showFill:true,fillColor:'#60a5fa',visible:true}];
+            active?.chart?.setStudies(studyConfigs);
+            status.textContent='Bollinger 20 · 2 ativado';
+          }else{
+            const current=studyConfigs.find(item=>item.study==='bollinger');
+            const visible=current?.visible!==false;
+            studyConfigs=studyConfigs.map(item=>item.study==='bollinger'?{...item,visible:!visible}:item);
+            active?.chart?.setStudies(studyConfigs);
+            status.textContent=visible?'Bollinger ocultado':'Bollinger mostrado';
           }
         }
         return;
