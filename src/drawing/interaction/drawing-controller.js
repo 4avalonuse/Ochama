@@ -1,6 +1,7 @@
 import { createDrawingTransform } from '../render/transform.js';
 import { createPlotGeometry } from '../../chart/plot-geometry.js';
 import { getDrawingTool } from '../core/drawing-registry.js';
+import { createChannelState, transitionChannel, isChannelState, CHANNEL_DRAWING_BASE, CHANNEL_ADJUSTING } from './channel-state.js';
 
 function pointFromEvent(event, canvas) {
   const rect = canvas.getBoundingClientRect();
@@ -33,7 +34,7 @@ export function createDrawingInteraction({
   let fibonacciMode = 'retracement';
   let draftPoints = [];
   let requestText = null;
-  let channelAdjusting = false;
+  let channelState = createChannelState();
   let channelAdjustingGesture = false;
   let channelDraft = null;
   let lastTextTap = { time: 0, x: 0, y: 0 };
@@ -47,7 +48,7 @@ export function createDrawingInteraction({
     activeTool = type;
     draftStart = null;
     draftPoints = [];
-    channelAdjusting = false;
+    channelState = createChannelState();
     channelAdjustingGesture = false;
     channelDraft = null;
     moving = null;
@@ -119,7 +120,7 @@ export function createDrawingInteraction({
     // Canal: fluxo próprio em duas fases.
     // Fase 1 = A→B. Fase 2 = segundo toque/gesto define a largura.
     if (activeTool === 'channel') {
-      if (channelAdjusting && channelDraft) {
+      if (isChannelState(channelState, CHANNEL_ADJUSTING) && channelDraft) {
         channelAdjustingGesture = true;
         channelDraft = { ...channelDraft, third: market };
         const preview = descriptor?.tool?.().create?.(
@@ -133,6 +134,7 @@ export function createDrawingInteraction({
         return;
       }
 
+      channelState = transitionChannel(channelState, { type: 'START', point: market });
       draftStart = market;
       drawPreview?.(null);
       return;
@@ -175,7 +177,7 @@ export function createDrawingInteraction({
       context: { symbol: document.symbol, provider: document.provider, interval: document.interval }
     };
 
-    if (activeTool === 'channel' && channelAdjusting && channelDraft) {
+    if (activeTool === 'channel' && isChannelState(channelState, CHANNEL_ADJUSTING) && channelDraft) {
       channelDraft.third = market;
       const preview = descriptor?.tool?.().create?.(
         channelDraft.start,
@@ -188,7 +190,7 @@ export function createDrawingInteraction({
       return;
     }
 
-    if (activeTool === 'channel' && !channelAdjusting && draftStart) {
+    if (activeTool === 'channel' && isChannelState(channelState, CHANNEL_DRAWING_BASE) && draftStart) {
       const preview = descriptor?.tool?.().create?.(
         draftStart,
         market,
@@ -230,7 +232,7 @@ export function createDrawingInteraction({
     const transform = createTransform(viewport, canvas);
     const end = transform.screenToMarket(point);
 
-    if (activeTool === 'channel' && channelAdjusting) {
+    if (activeTool === 'channel' && isChannelState(channelState, CHANNEL_ADJUSTING)) {
       if (!channelAdjustingGesture) return;
       const draft = channelDraft;
       if (!draft || !end) return;
@@ -249,7 +251,7 @@ export function createDrawingInteraction({
       );
       if (!drawing) return;
 
-      channelAdjusting = false;
+      channelState = transitionChannel(channelState, { type: 'RELEASE', point: end });
       channelAdjustingGesture = false;
       channelDraft = null;
       drawPreview?.(null);
@@ -271,7 +273,7 @@ export function createDrawingInteraction({
       }
       const start = draftStart;
       draftStart = null;
-      channelAdjusting = true;
+      channelState = transitionChannel(channelState, { type: 'RELEASE', point: end });
       channelAdjustingGesture = false;
       channelDraft = { start, end, third: end };
       const document = drawingManager.getDocument();
@@ -395,7 +397,7 @@ export function createDrawingInteraction({
     cancelDrawing() {
       draftStart = null;
       draftPoints = [];
-      channelAdjusting = false;
+      channelState = createChannelState();
       channelAdjustingGesture = false;
       channelDraft = null;
       drawPreview?.(null);
