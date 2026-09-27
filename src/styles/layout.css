@@ -119,14 +119,26 @@ button,
 .drawing-tools-menu button,.drawing-tools-title,.drawing-tools-section,.drawing-tools-coming{user-select:none;-webkit-user-select:none}
 
 
-.text-editor-dialog {
-  width: min(92vw, 420px);
-  border: 1px solid #334155;
-  border-radius: 14px;
-  padding: 0;
-  background: #0b1118;
-  color: #f8fafc;
-  box-shadow: 0 18px 50px rgba(0,0,0,.5);
+.text-editor-overlay{
+  position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;
+  padding:16px;box-sizing:border-box;background:rgba(0,0,0,.58);touch-action:none;
+}
+.text-editor-overlay.is-open{display:flex}
+.text-editor-panel{
+  width:min(92vw,420px);box-sizing:border-box;border:1px solid #334155;border-radius:14px;
+  padding:16px;background:#0b1118;color:#f8fafc;box-shadow:0 18px 50px rgba(0,0,0,.5);
+}
+.text-editor-title{font-weight:800;font-size:15px;margin-bottom:12px}
+.text-editor-input{
+  width:100%;box-sizing:border-box;min-height:46px;border:1px solid #475569;border-radius:10px;
+  background:#111827;color:#f8fafc;padding:10px 12px;font:inherit;font-size:16px;outline:none;
+  user-select:text;-webkit-user-select:text;touch-action:manipulation;
+}
+.text-editor-input:focus{border-color:#60a5fa}
+.text-editor-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.text-editor-actions button{
+  border:1px solid #334155;border-radius:9px;background:#16202d;color:#f8fafc;
+  padding:10px 14px;font:inherit;font-weight:700;user-select:none;-webkit-user-select:none;
 }
 .text-editor-dialog::backdrop { background: rgba(0,0,0,.58); }
 .text-editor-form { padding: 16px; }
