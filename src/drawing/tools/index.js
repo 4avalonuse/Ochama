@@ -1,9 +1,9 @@
 import './line.js';
 import './horizontal.js';
 import './vertical.js';
-import './fibonacci.js';
+import './fibonacci.js?v=20260927-29';
 import './rectangle.js';
 import './reference.js';
-import './channel.js';
-import './ruler.js';
+import './channel.js?v=20260927-29';
+import './ruler.js?v=20260927-29';
 import './text.js';
