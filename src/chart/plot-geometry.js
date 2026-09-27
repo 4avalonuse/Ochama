@@ -2,7 +2,7 @@ export const PLOT_GEOMETRY = Object.freeze({
   left: 10,
   right: 68,
   top: 18,
-  bottom: 24
+  bottom: 42
 });
 
 export function createPlotGeometry(width, height) {
