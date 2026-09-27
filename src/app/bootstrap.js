@@ -14,6 +14,7 @@ import { attachMovingAverageMenu } from '../ui/moving-average-menu.js';
 import { attachFibonacciMenu } from '../ui/fibonacci-menu.js?v=20260927-29';
 import { attachRsiMenu } from '../ui/rsi-menu.js?v=20260927-27';
 import { attachVolumeMenu } from '../ui/volume-menu.js?v=20260927-32';
+import { attachMacdMenu } from '../ui/macd-menu.js?v=20260927-33';
 import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
 import { createTextEditor } from '../ui/text-editor.js';
 
@@ -62,6 +63,7 @@ export async function bootstrap(){
   let drawingToolsMenuCleanup=()=>{};
   let rsiMenuCleanup=()=>{};
   let volumeMenuCleanup=()=>{};
+  let macdMenuCleanup=()=>{};
   const textEditor=createTextEditor();
 
   const PROVIDER_SYMBOLS={
@@ -306,6 +308,7 @@ export async function bootstrap(){
     drawingToolsMenuCleanup?.();
     rsiMenuCleanup?.destroy?.();
     volumeMenuCleanup?.destroy?.();
+    macdMenuCleanup?.destroy?.();
     textEditor.destroy();
     saveActiveState();
     if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
@@ -352,6 +355,14 @@ export async function bootstrap(){
   });
 
   volumeMenuCleanup=attachVolumeMenu({anchor:drawingMoreButton,getConfig:()=>studyConfigs.find(item=>item.study==='volume')||null,onChange:next=>{studyConfigs=studyConfigs.map(item=>item.study==='volume'?{...item,...next}:item);active?.chart?.setStudies(studyConfigs);}});
+  macdMenuCleanup=attachMacdMenu({
+    anchor:drawingMoreButton,
+    getConfig:()=>studyConfigs.find(item=>item.study==='macd')||null,
+    onChange:next=>{
+      studyConfigs=studyConfigs.map(item=>item.study==='macd'?{...item,...next}:item);
+      active?.chart?.setStudies(studyConfigs);
+    }
+  });
 
   drawingToolsMenuCleanup=attachDrawingToolsMenu({
     button:drawingMoreButton,
@@ -373,6 +384,15 @@ export async function bootstrap(){
         }
         volumeMenuCleanup.open?.(studyConfigs.find(item=>item.study==='volume'));
         status.textContent='Configuração do volume';
+      }
+       if(selection?.value==='macd'){
+        const exists=studyConfigs.some(item=>item.study==='macd');
+        if(!exists){
+          studyConfigs=[...studyConfigs,{study:'macd',fastPeriod:12,slowPeriod:26,signalPeriod:9,source:'close',macdColor:'#dbe4ee',signalColor:'#f59e0b',upColor:'#4ade80',downColor:'#f87171',visible:true}];
+          active?.chart?.setStudies(studyConfigs);
+        }
+        macdMenuCleanup.open?.(studyConfigs.find(item=>item.study==='macd'));
+        status.textContent='Configuração do MACD';
       }
    },
     onSelect:(selection)=>{
@@ -403,6 +423,20 @@ export async function bootstrap(){
             studyConfigs=studyConfigs.map(item=>item.study==='volume'?{...item,visible:!visible}:item);
             active?.chart?.setStudies(studyConfigs);
             status.textContent=visible?'Volume ocultado':'Volume mostrado';
+          }
+        }
+        if(selection.value==='macd'){
+          const exists=studyConfigs.some(item=>item.study==='macd');
+          if(!exists){
+            studyConfigs=[...studyConfigs,{study:'macd',fastPeriod:12,slowPeriod:26,signalPeriod:9,source:'close',macdColor:'#dbe4ee',signalColor:'#f59e0b',upColor:'#4ade80',downColor:'#f87171',visible:true}];
+            active?.chart?.setStudies(studyConfigs);
+            status.textContent='MACD 12/26/9 ativado';
+          }else{
+            const current=studyConfigs.find(item=>item.study==='macd');
+            const visible=current?.visible!==false;
+            studyConfigs=studyConfigs.map(item=>item.study==='macd'?{...item,visible:!visible}:item);
+            active?.chart?.setStudies(studyConfigs);
+            status.textContent=visible?'MACD ocultado':'MACD mostrado';
           }
         }
         return;
