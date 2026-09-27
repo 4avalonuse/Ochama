@@ -53,6 +53,7 @@ export async function bootstrap(){
   let active=null;
   let activeDrawingInteraction=null;
   let movingAverageConfigs=[];
+  let fibonacciMenuCleanup=()=>{};
 
   const PROVIDER_SYMBOLS={
     yahoo:{'BTC-USD':'BTC-USD','SOL-USD':'SOL-USD'},
@@ -299,7 +300,7 @@ export async function bootstrap(){
     drawingFibonacciButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='fibonacci');
   };
 
-  const fibonacciMenuCleanup=attachFibonacciMenu({
+  fibonacciMenuCleanup=attachFibonacciMenu({
     button:drawingFibonacciButton,
     onModeChange:(mode)=>activeDrawingInteraction?.setFibonacciMode?.(mode),
     onActivate:()=>{
