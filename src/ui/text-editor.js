@@ -4,7 +4,7 @@ export function createTextEditor(){
   overlay.innerHTML=`
     <div class="text-editor-panel" role="dialog" aria-modal="true">
       <div class="text-editor-title">Adicionar texto</div>
-      <input class="text-editor-input" type="text" maxlength="120" autocomplete="off" placeholder="Digite sua anotação">
+      <input class="text-editor-input" type="text" inputmode="text" enterkeyhint="done" autocapitalize="sentences" autocomplete="off" maxlength="120" placeholder="Digite sua anotação">
       <div class="text-editor-actions">
         <button type="button" data-action="cancel">Cancelar</button>
         <button type="button" data-action="ok">Adicionar</button>
@@ -49,8 +49,9 @@ export function createTextEditor(){
       overlay.classList.add('is-open');
       return new Promise(resolve=>{
         resolveCurrent=resolve;
+        input.focus({preventScroll:true});
         requestAnimationFrame(()=>{
-          input.focus({preventScroll:true});
+          if(document.activeElement!==input) input.focus({preventScroll:true});
           input.select();
         });
       });
