@@ -307,10 +307,6 @@ export async function bootstrap(){
     if(active?.drawingManager) drawingPersistence.save(active.drawingManager.getDocument());
   });
 
-  document.querySelector('#config-button')?.addEventListener('click',()=>{
-    status.textContent='Configurações: em breve'
-  });
-
   const drawingSelectButton=document.querySelector('#drawing-select');
   const drawingLineButton=document.querySelector('#drawing-line');
   const drawingNavButton=document.querySelector('#drawing-nav');
