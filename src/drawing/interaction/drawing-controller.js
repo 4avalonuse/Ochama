@@ -32,6 +32,7 @@ export function createDrawingInteraction({
   let drawingColor = '#60a5fa';
   let fibonacciMode = 'retracement';
   let draftPoints = [];
+  let requestText = null;
 
   function syncSelection() {
     drawSelection?.(selectedId);
@@ -77,14 +78,24 @@ export function createDrawingInteraction({
     };
 
     if (descriptor?.singlePoint) {
-      const options = { ...baseOptions };
       if (activeTool === 'text') {
-        const value = window.prompt('Texto da anotação:', 'Texto');
-        if (value === null) return;
-        options.text = value.trim() || 'Texto';
+        Promise.resolve(requestText?.('')).then(value => {
+          if (!value) return;
+          const drawing = descriptor.tool?.().create?.(
+            market, null, viewport.getYScaleType(), drawingColor, { ...baseOptions, text: value }
+          );
+          if (!drawing) return;
+          drawingManager.add(drawing);
+          selectedId = drawing.id;
+          syncSelection();
+          draw();
+          onChanged?.();
+          onComplete?.();
+        });
+        return;
       }
       const drawing = descriptor.tool?.().create?.(
-        market, null, viewport.getYScaleType(), drawingColor, options
+        market, null, viewport.getYScaleType(), drawingColor, baseOptions
       );
       if (!drawing) return;
       drawingManager.add(drawing);
@@ -97,51 +108,64 @@ export function createDrawingInteraction({
     }
 
     const pointCount = Math.max(2, Number(descriptor?.pointCount) || 2);
-    draftPoints.push(market);
 
-    if (draftPoints.length < pointCount) {
-      draftStart = draftPoints[0];
+    // Ferramentas de 2 pontos continuam no gesto clássico: pressionar/arrastar/soltar.
+    if (pointCount === 2) {
+      draftStart = market;
+      drawPreview?.(null);
       return;
     }
 
-    const startPoint = draftPoints[0];
-    const endPoint = draftPoints[1];
-    const options = { ...baseOptions };
-    if (pointCount >= 3) options.thirdPoint = draftPoints[2];
-
-    const drawing = descriptor?.tool?.().create?.(
-      startPoint, endPoint, viewport.getYScaleType(), drawingColor, options
-    );
-    draftPoints = [];
+    // Ferramentas de múltiplos pontos usam toques sucessivos.
+    draftPoints.push(market);
     draftStart = null;
-    drawPreview?.(null);
-    if (!drawing) return;
 
-    drawingManager.add(drawing);
-    selectedId = drawing.id;
-    syncSelection();
-    draw();
-    onChanged?.();
-    onComplete?.();
+    if (draftPoints.length >= pointCount) {
+      const startPoint = draftPoints[0];
+      const endPoint = draftPoints[1];
+      const options = { ...baseOptions, thirdPoint: draftPoints[2] };
+      const drawing = descriptor?.tool?.().create?.(
+        startPoint, endPoint, viewport.getYScaleType(), drawingColor, options
+      );
+      draftPoints = [];
+      drawPreview?.(null);
+      if (!drawing) return;
+      drawingManager.add(drawing);
+      selectedId = drawing.id;
+      syncSelection();
+      draw();
+      onChanged?.();
+      onComplete?.();
+    }
   }
 
   function drawingMove(event) {
-    if (!draftPoints.length) return;
     const point = pointFromEvent(event, canvas);
     const transform = createTransform(viewport, canvas);
     const market = transform.screenToMarket(point);
     if (!market) return;
 
     const descriptor = getDrawingTool(activeTool);
+    const pointCount = Math.max(2, Number(descriptor?.pointCount) || 2);
     const document = drawingManager.getDocument();
     const options = {
       mode: fibonacciMode,
       context: { symbol: document.symbol, provider: document.provider, interval: document.interval }
     };
-    const pointCount = Math.max(2, Number(descriptor?.pointCount) || 2);
+
+    if (pointCount === 2 && draftStart) {
+      const preview = descriptor?.tool?.().create?.(
+        draftStart, market, viewport.getYScaleType(), drawingColor, options
+      );
+      if (preview) drawPreview?.(preview);
+      return;
+    }
+
+    if (pointCount < 3 || !draftPoints.length) return;
+
     const startPoint = draftPoints[0];
     const endPoint = draftPoints[1] || market;
-    if (pointCount >= 3 && draftPoints.length >= 2) options.thirdPoint = market;
+    if (draftPoints.length >= 2) options.thirdPoint = market;
 
     const preview = descriptor?.tool?.().create?.(
       startPoint, endPoint, viewport.getYScaleType(), drawingColor, options
@@ -150,8 +174,15 @@ export function createDrawingInteraction({
   }
 
 
+
   function drawingUp(event) {
+    const descriptor = getDrawingTool(activeTool);
+    const pointCount = Math.max(2, Number(descriptor?.pointCount) || 2);
+
+    // Multi-point tools finish on the final tap, not on pointer release.
+    if (pointCount >= 3) return;
     if (!draftStart) return;
+
     const point = pointFromEvent(event, canvas);
     const transform = createTransform(viewport, canvas);
     const end = transform.screenToMarket(point);
@@ -160,20 +191,12 @@ export function createDrawingInteraction({
     drawPreview?.(null);
     if (!end) return;
 
-    const descriptor = getDrawingTool(activeTool);
     const document = drawingManager.getDocument();
     const drawing = descriptor?.tool?.().create?.(
-      start,
-      end,
-      viewport.getYScaleType(),
-      drawingColor,
+      start, end, viewport.getYScaleType(), drawingColor,
       {
         mode: fibonacciMode,
-        context: {
-          symbol: document.symbol,
-          provider: document.provider,
-          interval: document.interval
-        }
+        context: { symbol: document.symbol, provider: document.provider, interval: document.interval }
       }
     );
     if (!drawing) return;
@@ -240,6 +263,7 @@ export function createDrawingInteraction({
 
   return {
     setTool,
+    setTextEditor(editor) { requestText = editor; },
     getTool: () => activeTool,
     getColor: () => drawingColor,
     getFibonacciMode: () => fibonacciMode,
