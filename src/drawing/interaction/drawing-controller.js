@@ -246,10 +246,6 @@ export function createDrawingInteraction({
     if (activeTool === 'channel' && channelAdjusting) {
       if (!channelAdjustingGesture) return;
       const draft = channelDraft;
-      channelAdjusting = false;
-      channelAdjustingGesture = false;
-      channelDraft = null;
-      drawPreview?.(null);
       if (!draft || !end) return;
 
       const document = drawingManager.getDocument();
@@ -266,6 +262,10 @@ export function createDrawingInteraction({
       );
       if (!drawing) return;
 
+      channelAdjusting = false;
+      channelAdjustingGesture = false;
+      channelDraft = null;
+      drawPreview?.(null);
       drawingManager.add(drawing);
       selectedId = drawing.id;
       syncSelection();
