@@ -340,12 +340,13 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     if (paneStudies.length) {
       const paneTop = mainHeight + paneGap;
       if (paneControls) paneControls.style.top = mainHeight + 'px';
-      const panePlotHeight = Math.max(1, paneHeight - 24);
+      const panePlotTop = paneTop + 28;
+      const panePlotHeight = Math.max(1, paneHeight - 28);
       paneStudies.forEach(({ study, configs }) => {
         study.render(ctx, {
           candles,
           state,
-          plot: createPanePlot(width, paneTop, panePlotHeight, plot, state),
+          plot: createPanePlot(width, panePlotTop, panePlotHeight, plot, state),
           config: configs[0],
           configs,
           toScaleValue
