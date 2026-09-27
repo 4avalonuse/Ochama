@@ -304,7 +304,7 @@ export async function bootstrap(){
     drawingFibonacciButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='fibonacci');
     document.querySelector('#drawing-more')?.classList.toggle(
       'is-active',
-      mode==='drawing' && ['rectangle','reference'].includes(activeDrawingInteraction?.getTool?.())
+      mode==='drawing' && ['rectangle','reference','channel','ruler','text'].includes(activeDrawingInteraction?.getTool?.())
     );
   };
 
@@ -320,7 +320,7 @@ export async function bootstrap(){
   drawingToolsMenuCleanup=attachDrawingToolsMenu({
     button:drawingMoreButton,
     onSelect:(tool)=>{
-      if(!['rectangle','reference'].includes(tool)) return;
+      if(!['rectangle','reference','channel','ruler','text'].includes(tool)) return;
       activeDrawingInteraction?.setTool(tool);
       setToolbarMode('drawing');
     }
