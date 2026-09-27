@@ -302,7 +302,10 @@ export async function bootstrap(){
     drawingHorizontalButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='horizontal');
     drawingVerticalButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='vertical');
     drawingFibonacciButton?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='fibonacci');
-    document.querySelector('#drawing-more')?.classList.toggle('is-active',mode==='drawing' && activeDrawingInteraction?.getTool?.()==='rectangle');
+    document.querySelector('#drawing-more')?.classList.toggle(
+      'is-active',
+      mode==='drawing' && ['rectangle','reference'].includes(activeDrawingInteraction?.getTool?.())
+    );
   };
 
   fibonacciMenuCleanup=attachFibonacciMenu({
@@ -317,8 +320,8 @@ export async function bootstrap(){
   drawingToolsMenuCleanup=attachDrawingToolsMenu({
     button:drawingMoreButton,
     onSelect:(tool)=>{
-      if(tool!=='rectangle') return;
-      activeDrawingInteraction?.setTool('rectangle');
+      if(!['rectangle','reference'].includes(tool)) return;
+      activeDrawingInteraction?.setTool(tool);
       setToolbarMode('drawing');
     }
   });
