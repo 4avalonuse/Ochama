@@ -155,6 +155,7 @@ function drawStudies(ctx, candles, state, plot, studies) {
   };
 
   listStudies().forEach(study => {
+    if (study.placement !== 'overlay') return;
     const configs = studies.filter(item => {
       const type = item.study || (item.type === 'sma' || item.type === 'ema' ? 'moving-average' : null);
       return type === study.id;
