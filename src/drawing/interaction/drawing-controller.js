@@ -116,6 +116,13 @@ export function createDrawingInteraction({
 
     const pointCount = Math.max(2, Number(descriptor?.pointCount) || 2);
 
+    // Canal: a primeira fase reaproveita exatamente o gesto de Line.
+    if (activeTool === 'channel' && !channelAdjusting) {
+      draftStart = market;
+      drawPreview?.(null);
+      return;
+    }
+
     // Ferramentas de 2 pontos continuam no gesto clássico: pressionar/arrastar/soltar.
     if (pointCount === 2) {
       draftStart = market;
@@ -194,6 +201,18 @@ export function createDrawingInteraction({
       return;
     }
 
+    if (activeTool === 'channel' && !channelAdjusting && draftStart) {
+      const preview = descriptor?.tool?.().create?.(
+        draftStart,
+        market,
+        viewport.getYScaleType(),
+        drawingColor,
+        options
+      );
+      if (preview) drawPreview?.(preview);
+      return;
+    }
+
     if (pointCount === 2 && draftStart) {
       const preview = descriptor?.tool?.().create?.(
         draftStart, market, viewport.getYScaleType(), drawingColor, options
@@ -256,21 +275,15 @@ export function createDrawingInteraction({
       return;
     }
 
-    // Multi-point tools finish on the final tap, not on pointer release.
-    if (pointCount >= 3) return;
-    if (!draftStart) return;
-
-    const point = pointFromEvent(event, canvas);
-    const transform = createTransform(viewport, canvas);
-    const end = transform.screenToMarket(point);
-    const start = draftStart;
-    draftStart = null;
-
-    if (activeTool === 'channel') {
-      if (!end) {
+    // Canal: o primeiro release encerra A→B e entra no ajuste da largura.
+    if (activeTool === 'channel' && !channelAdjusting) {
+      if (!draftStart || !end) {
+        draftStart = null;
         drawPreview?.(null);
         return;
       }
+      const start = draftStart;
+      draftStart = null;
       channelAdjusting = true;
       channelAdjustingGesture = false;
       channelDraft = { start, end, third: end };
@@ -290,6 +303,15 @@ export function createDrawingInteraction({
       return;
     }
 
+    // Multi-point tools finish on the final tap, not on pointer release.
+    if (pointCount >= 3) return;
+    if (!draftStart) return;
+
+    const point = pointFromEvent(event, canvas);
+    const transform = createTransform(viewport, canvas);
+    const end = transform.screenToMarket(point);
+    const start = draftStart;
+    draftStart = null;
     drawPreview?.(null);
     if (!end) return;
 
