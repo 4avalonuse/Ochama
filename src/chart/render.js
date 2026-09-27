@@ -278,7 +278,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
         paneControls = null;
         paneDragCleanup?.();
         paneDragCleanup = null;
-        options.onPaneClose?.();
+        options.onPaneClose?.(paneStudy?.id);
         options.onPaneChange?.(studyConfigs);
         draw();
       });
