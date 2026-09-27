@@ -4,3 +4,6 @@ import './vertical.js';
 import './fibonacci.js';
 import './rectangle.js';
 import './reference.js';
+import './channel.js';
+import './ruler.js';
+import './text.js';
