@@ -33,6 +33,10 @@ export function createDrawingInteraction({
   let fibonacciMode = 'retracement';
   let draftPoints = [];
   let requestText = null;
+  let channelAdjusting = false;
+  let channelAdjustingGesture = false;
+  let channelDraft = null;
+  let lastTextTap = { time: 0, x: 0, y: 0 };
 
   function syncSelection() {
     drawSelection?.(selectedId);
@@ -43,6 +47,9 @@ export function createDrawingInteraction({
     activeTool = type;
     draftStart = null;
     draftPoints = [];
+    channelAdjusting = false;
+    channelAdjustingGesture = false;
+    channelDraft = null;
     moving = null;
     movementRecorded = false;
     selectedId = null;
@@ -116,7 +123,28 @@ export function createDrawingInteraction({
       return;
     }
 
-    // Ferramentas de múltiplos pontos usam toques sucessivos.
+    if (activeTool === 'channel' && channelAdjusting) {
+      channelAdjustingGesture = true;
+      channelDraft = {
+        start: channelDraft.start,
+        end: channelDraft.end,
+        third: market
+      };
+      const preview = descriptor?.tool?.().create?.(
+        channelDraft.start,
+        channelDraft.end,
+        viewport.getYScaleType(),
+        drawingColor,
+        { ...baseOptions, thirdPoint: market }
+      );
+      if (preview) drawPreview?.(preview);
+      return;
+    }
+
+    // Canal: primeiro gesto = A→B como uma Line.
+    if (activeTool === 'channel') return;
+
+    // Outras ferramentas multi-ponto continuam no fluxo legado.
     draftPoints.push(market);
     draftStart = null;
 
@@ -153,6 +181,19 @@ export function createDrawingInteraction({
       context: { symbol: document.symbol, provider: document.provider, interval: document.interval }
     };
 
+    if (activeTool === 'channel' && channelAdjusting && channelDraft) {
+      channelDraft.third = market;
+      const preview = descriptor?.tool?.().create?.(
+        channelDraft.start,
+        channelDraft.end,
+        viewport.getYScaleType(),
+        drawingColor,
+        { ...baseOptions, thirdPoint: market }
+      );
+      if (preview) drawPreview?.(preview);
+      return;
+    }
+
     if (pointCount === 2 && draftStart) {
       const preview = descriptor?.tool?.().create?.(
         draftStart, market, viewport.getYScaleType(), drawingColor, options
@@ -179,6 +220,42 @@ export function createDrawingInteraction({
     const descriptor = getDrawingTool(activeTool);
     const pointCount = Math.max(2, Number(descriptor?.pointCount) || 2);
 
+    const point = pointFromEvent(event, canvas);
+    const transform = createTransform(viewport, canvas);
+    const end = transform.screenToMarket(point);
+
+    if (activeTool === 'channel' && channelAdjusting) {
+      if (!channelAdjustingGesture) return;
+      const draft = channelDraft;
+      channelAdjusting = false;
+      channelAdjustingGesture = false;
+      channelDraft = null;
+      drawPreview?.(null);
+      if (!draft || !end) return;
+
+      const document = drawingManager.getDocument();
+      const drawing = descriptor?.tool?.().create?.(
+        draft.start,
+        draft.end,
+        viewport.getYScaleType(),
+        drawingColor,
+        {
+          mode: fibonacciMode,
+          context: { symbol: document.symbol, provider: document.provider, interval: document.interval },
+          thirdPoint: end
+        }
+      );
+      if (!drawing) return;
+
+      drawingManager.add(drawing);
+      selectedId = drawing.id;
+      syncSelection();
+      draw();
+      onChanged?.();
+      onComplete?.();
+      return;
+    }
+
     // Multi-point tools finish on the final tap, not on pointer release.
     if (pointCount >= 3) return;
     if (!draftStart) return;
@@ -188,6 +265,31 @@ export function createDrawingInteraction({
     const end = transform.screenToMarket(point);
     const start = draftStart;
     draftStart = null;
+
+    if (activeTool === 'channel') {
+      if (!end) {
+        drawPreview?.(null);
+        return;
+      }
+      channelAdjusting = true;
+      channelAdjustingGesture = false;
+      channelDraft = { start, end, third: end };
+      const document = drawingManager.getDocument();
+      const preview = descriptor?.tool?.().create?.(
+        start,
+        end,
+        viewport.getYScaleType(),
+        drawingColor,
+        {
+          mode: fibonacciMode,
+          context: { symbol: document.symbol, provider: document.provider, interval: document.interval },
+          thirdPoint: end
+        }
+      );
+      if (preview) drawPreview?.(preview);
+      return;
+    }
+
     drawPreview?.(null);
     if (!end) return;
 
@@ -212,8 +314,29 @@ export function createDrawingInteraction({
   function selectionDown(event) {
     const point = pointFromEvent(event, canvas);
     const hit = selectAt(point);
+    const now = performance.now();
+    const isDoubleTextTap = Boolean(
+      hit?.drawing?.type === 'text' &&
+      now - lastTextTap.time < 380 &&
+      Math.hypot(point.x - lastTextTap.x, point.y - lastTextTap.y) < 18
+    );
+
+    lastTextTap = { time: now, x: point.x, y: point.y };
     selectedId = hit?.drawing?.id || null;
     syncSelection();
+
+    if (isDoubleTextTap) {
+      const textDrawing = hit.drawing;
+      Promise.resolve(requestText?.(textDrawing.text || '')).then(value => {
+        if (value == null || !drawingManager.getDrawings().some(item => item.id === textDrawing.id)) return;
+        drawingManager.replace(textDrawing.id, { ...textDrawing, text: value }, true);
+        selectedId = textDrawing.id;
+        syncSelection();
+        draw();
+        onChanged?.();
+      });
+      return;
+    }
     if (!hit?.drawing) {
       moving = null;
       draw();
@@ -263,6 +386,15 @@ export function createDrawingInteraction({
 
   return {
     setTool,
+    cancelDrawing() {
+      draftStart = null;
+      draftPoints = [];
+      channelAdjusting = false;
+      channelAdjustingGesture = false;
+      channelDraft = null;
+      drawPreview?.(null);
+      return true;
+    },
     setTextEditor(editor) { requestText = editor; },
     getTool: () => activeTool,
     getColor: () => drawingColor,
