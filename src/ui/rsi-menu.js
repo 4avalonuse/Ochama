@@ -5,7 +5,10 @@ export function attachRsiMenu({anchor,onChange,getConfig}){
   menu.className='rsi-config-menu';
   menu.hidden=true;
   menu.innerHTML=`
-    <div class="rsi-config-title">RSI</div>
+    <div class="rsi-config-head">
+      <div class="rsi-config-title">RSI</div>
+      <button type="button" class="rsi-config-close" aria-label="Fechar configuração do RSI" title="Fechar">×</button>
+    </div>
     <div class="rsi-config-grid">
       <label>Período<input data-rsi-period type="number" min="2" max="100" step="1" inputmode="numeric"></label>
       <label>Baixa<input data-rsi-low type="number" min="0" max="100" step="1" inputmode="numeric"></label>
@@ -64,7 +67,14 @@ export function attachRsiMenu({anchor,onChange,getConfig}){
     requestAnimationFrame(position);
   };
 
-  const close=()=>{menu.hidden=true;};
+  const close=()=>{
+    menu.hidden=true;
+  };
+
+  const toggle=cfg=>{
+    if(menu.hidden) open(cfg);
+    else close();
+  };
 
   const onDocumentPointerDown=event=>{
     if(menu.hidden||event.target===anchor||menu.contains(event.target)) return;
@@ -72,6 +82,11 @@ export function attachRsiMenu({anchor,onChange,getConfig}){
   };
 
   menu.addEventListener('change',emit);
+  menu.querySelector('.rsi-config-close').addEventListener('click',close);
+  const onKeyDown=event=>{
+    if(event.key==='Escape' && !menu.hidden) close();
+  };
+  document.addEventListener('keydown',onKeyDown);
   document.addEventListener('pointerdown',onDocumentPointerDown);
   window.addEventListener('resize',position);
   window.addEventListener('scroll',position,true);
@@ -79,7 +94,9 @@ export function attachRsiMenu({anchor,onChange,getConfig}){
   return {
     open,
     close,
+    toggle,
     destroy:()=>{
+      document.removeEventListener('keydown',onKeyDown);
       document.removeEventListener('pointerdown',onDocumentPointerDown);
       window.removeEventListener('resize',position);
       window.removeEventListener('scroll',position,true);
