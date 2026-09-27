@@ -6,6 +6,11 @@ function validRange(min, max) {
 
 export function createDrawingTransform({ viewport, plot }) {
   return {
+    plotLeft: plot.left,
+    plotRight: plot.left + plot.width,
+    plotTop: plot.top,
+    plotBottom: plot.top + plot.height,
+
     marketToScreen(point) {
       const state = viewport.getState();
       const xSpan = state.x.max - state.x.min;
