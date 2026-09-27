@@ -156,7 +156,7 @@ function drawStudies(ctx, candles, state, plot, studies) {
 
   listStudies().forEach(study => {
     const configs = studies.filter(item => {
-      const type = item.study || (item.type ? 'moving-average' : null);
+      const type = item.study || (item.type === 'sma' || item.type === 'ema' ? 'moving-average' : null);
       return type === study.id;
     });
     if (!configs.length) return;
