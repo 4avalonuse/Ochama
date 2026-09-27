@@ -2,7 +2,7 @@ export function createStudyInfo(){
   const overlay=document.createElement('div');
   overlay.className='study-info-overlay';
   overlay.hidden=true;
-  overlay.innerHTML='
+  overlay.innerHTML=`
     <div class="study-info-card" role="dialog" aria-modal="true" aria-labelledby="study-info-title">
       <div class="study-info-head">
         <div>
@@ -13,7 +13,7 @@ export function createStudyInfo(){
       </div>
       <div class="study-info-body"></div>
     </div>
-  ';
+  `;
   document.body.appendChild(overlay);
 
   const title=overlay.querySelector('.study-info-title');
