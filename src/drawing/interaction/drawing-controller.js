@@ -10,10 +10,8 @@ function pointFromEvent(event, canvas) {
 }
 
 function createTransform(viewport, canvas) {
-  return createDrawingTransform({
-    viewport,
-    plot: createPlotGeometry(canvas.clientWidth, canvas.clientHeight)
-  });
+  const plot = getPlot?.() || createPlotGeometry(canvas.clientWidth, canvas.clientHeight);
+  return createDrawingTransform({ viewport, plot });
 }
 
 export function createDrawingInteraction({
@@ -24,7 +22,8 @@ export function createDrawingInteraction({
   drawPreview = null,
   onChanged = null,
   onComplete = null,
-  drawSelection = null
+  drawSelection = null,
+  getPlot = null
 }) {
   let activeTool = 'line';
   let draftStart = null;
