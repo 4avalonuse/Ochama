@@ -98,6 +98,26 @@ function drawGrid(ctx, width, height, plot, yMin, yMax, scaleType, xMin, xMax) {
       ctx.stroke();
 
       ctx.textAlign = i === 0 ? 'left' : i === 6 ? 'right' : 'center';
+
+      // Eixo X: rótulos com uma cápsula translúcida que muda
+      // sutilmente conforme a janela temporal/zoom muda.
+      const zoomPhase = Math.log10(Math.max(1, xSpan)) * 37.5;
+      const hue = ((zoomPhase % 28) + 28) % 28 + 205;
+      const paddingX = 5;
+      const paddingY = 3;
+      const metrics = ctx.measureText(label);
+      const labelWidth = metrics.width + paddingX * 2;
+      const labelHeight = 17;
+      let labelLeft = x - labelWidth / 2;
+      if (i === 0) labelLeft = x;
+      if (i === 6) labelLeft = x - labelWidth;
+
+      ctx.fillStyle = `hsla(${hue}, 32%, 28%, .62)`;
+      ctx.beginPath();
+      ctx.roundRect(labelLeft, axisY + 4, labelWidth, labelHeight, 5);
+      ctx.fill();
+
+      ctx.fillStyle = '#9aa6b5';
       ctx.fillText(label, x, axisY + 7);
     }
   }
