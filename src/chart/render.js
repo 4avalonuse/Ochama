@@ -357,6 +357,18 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
   }
 
 
+  function getDrawingPlot() {
+    const width = host.clientWidth;
+    const height = host.clientHeight;
+    const paneStudies = getPaneStudies(studyConfigs);
+    const paneGap = paneStudies.length ? 12 : 0;
+    const paneHeight = paneStudies.length
+      ? Math.min(height * 0.45, Math.max(110, height * paneRatio))
+      : 0;
+    const mainHeight = paneStudies.length ? Math.max(1, height - paneHeight - paneGap) : height;
+    return createPlotGeometry(width, mainHeight);
+  }
+
   function setSelectedDrawingId(id) {
     selectedDrawingId = id || null;
     draw();
@@ -376,6 +388,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     draw,
     setDrawingPreview,
     setSelectedDrawingId,
+    getDrawingPlot,
     setChartType,
     setMovingAverages,
     setStudies,
