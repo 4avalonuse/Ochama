@@ -9,7 +9,8 @@ export function createDrawingSelection({
   draw,
   drawSelection = null,
   getTextEditor = () => null,
-  onChanged = null
+  onChanged = null,
+  getPlot = null
 }) {
   let selectedId = null;
   let moving = null;
@@ -22,10 +23,8 @@ export function createDrawingSelection({
   }
 
   function createTransform() {
-    return createDrawingTransform({
-      viewport,
-      plot: createPlotGeometry(canvas.clientWidth, canvas.clientHeight)
-    });
+    const plot = getPlot?.() || createPlotGeometry(canvas.clientWidth, canvas.clientHeight);
+    return createDrawingTransform({ viewport, plot });
   }
 
   function sync() {
