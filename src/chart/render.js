@@ -85,6 +85,50 @@ function drawGrid(ctx, width, height, plot, yMin, yMax, scaleType, xMin, xMax) {
     ctx.lineTo(plot.left + plot.width, axisY);
     ctx.stroke();
 
+    // Fundo temporal: a unidade visual acompanha o zoom.
+    // Longe = ano, médio = mês, perto = semana.
+    const DAY = 24 * 60 * 60 * 1000;
+    const MONTH = 30 * DAY;
+    const YEAR = 365 * DAY;
+    const unit = xSpan > 2 * YEAR ? 'year' : xSpan > 120 * DAY ? 'month' : 'week';
+
+    const startDate = new Date(xMin);
+    let cursor;
+    if (unit === 'year') cursor = new Date(startDate.getFullYear(), 0, 1);
+    else if (unit === 'month') cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    else {
+      cursor = new Date(startDate);
+      cursor.setHours(0, 0, 0, 0);
+      cursor.setDate(cursor.getDate() - cursor.getDay());
+    }
+
+    ctx.save();
+    ctx.globalAlpha = 0.16;
+    let bandIndex = 0;
+    while (cursor.getTime() < xMax) {
+      const nextCursor = new Date(cursor);
+      if (unit === 'year') nextCursor.setFullYear(nextCursor.getFullYear() + 1);
+      else if (unit === 'month') nextCursor.setMonth(nextCursor.getMonth() + 1);
+      else nextCursor.setDate(nextCursor.getDate() + 7);
+
+      const bandStart = Math.max(xMin, cursor.getTime());
+      const bandEnd = Math.min(xMax, nextCursor.getTime());
+      if (bandEnd > bandStart) {
+        const left = plot.left + ((bandStart - xMin) / xSpan) * plot.width;
+        const right = plot.left + ((bandEnd - xMin) / xSpan) * plot.width;
+        const hue = unit === 'year'
+          ? 208 + (bandIndex % 2) * 12
+          : unit === 'month'
+            ? 214 + (bandIndex % 2) * 10
+            : 220 + (bandIndex % 2) * 8;
+        ctx.fillStyle = `hsla(${hue}, 35%, 34%, .42)`;
+        ctx.fillRect(left, plot.top, Math.max(1, right - left), plot.height);
+      }
+      cursor = nextCursor;
+      bandIndex += 1;
+    }
+    ctx.restore();
+
     for (let i = 0; i <= 6; i += 1) {
       const ratio = i / 6;
       const x = plot.left + plot.width * ratio;
@@ -99,12 +143,9 @@ function drawGrid(ctx, width, height, plot, yMin, yMax, scaleType, xMin, xMax) {
 
       ctx.textAlign = i === 0 ? 'left' : i === 6 ? 'right' : 'center';
 
-      // Eixo X: rótulos com uma cápsula translúcida que muda
-      // sutilmente conforme a janela temporal/zoom muda.
       const zoomPhase = Math.log10(Math.max(1, xSpan)) * 37.5;
       const hue = ((zoomPhase % 28) + 28) % 28 + 205;
       const paddingX = 5;
-      const paddingY = 3;
       const metrics = ctx.measureText(label);
       const labelWidth = metrics.width + paddingX * 2;
       const labelHeight = 17;
