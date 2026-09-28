@@ -210,6 +210,7 @@ export async function bootstrap(){
         draw:chart.draw,
         drawPreview:chart.setDrawingPreview,
         drawSelection:chart.setSelectedDrawingId,
+        getPlot:chart.getDrawingPlot,
         onChanged:drawingChanged,
         onComplete:()=>setToolbarMode('navigation')
       });
