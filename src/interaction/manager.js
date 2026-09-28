@@ -14,7 +14,7 @@ export class InteractionManager {
     this.pointers = new Map();
     this.owner = null;
     this.mode = 'auto';
-    this.gesture = { type: null, last: null, pinchDistance: null, pinchCenter: null };
+    this.gesture = { type: null, last: null, pinchDistance: null, pinchCenter: null, pinchVector: null };
     this.plot = PLOT_GEOMETRY;
     this.bound = false;
   }
@@ -54,7 +54,7 @@ export class InteractionManager {
     this.canvas.style.touchAction = '';
     this.pointers.clear();
     this.owner = null;
-    this.gesture = { type: null, last: null, pinchDistance: null };
+    this.gesture = { type: null, last: null, pinchDistance: null, pinchCenter: null, pinchVector: null };
     this.bound = false;
   }
 
@@ -72,7 +72,8 @@ export class InteractionManager {
         type: this._priceScale(point) ? 'price-scale' : null,
         last: point,
         pinchDistance: null,
-        pinchCenter: null
+        pinchCenter: null,
+        pinchVector: null
       };
 
       if (this.owner === 'drawing') this.handlers.onDrawingDown?.(event);
@@ -82,6 +83,7 @@ export class InteractionManager {
       this.gesture.type = 'two-finger';
       this.gesture.pinchDistance = Math.max(1, Math.hypot(b.x-a.x,b.y-a.y));
       this.gesture.pinchCenter = { x:(a.x+b.x)/2, y:(a.y+b.y)/2 };
+      this.gesture.pinchVector = { x:b.x-a.x, y:b.y-a.y };
       this.gesture.last = null;
     }
   }
@@ -116,7 +118,8 @@ export class InteractionManager {
       const isPinch = distanceChange > Math.max(2, centerChange * 1.35);
 
       if (isPinch) {
-        const factor = Math.pow(previousDistance / nextDistance, 0.5);
+        const rawFactor = Math.pow(previousDistance / nextDistance, 0.42);
+        const factor = Math.max(0.94, Math.min(1.06, rawFactor));
         const current = this.viewport.getState();
         const plotWidth = Math.max(1, rect.width-this.plot.left-this.plot.right);
         const plotHeight = Math.max(1, rect.height-this.plot.top-this.plot.bottom);
@@ -124,10 +127,17 @@ export class InteractionManager {
         const yRatio = Math.max(0, Math.min(1, (center.y-this.plot.top)/plotHeight));
         const xAnchor = current.x.min + (current.x.max-current.x.min)*xRatio;
         const yAnchor = this.viewport.priceAtYRatio(yRatio);
-        const dx = Math.abs(b.x-a.x);
-        const dy = Math.abs(b.y-a.y);
-        const horizontalPinch = dx >= 12 && dx > dy * 1.25;
-        const verticalPinch = dy >= 12 && dy > dx * 1.25;
+
+        const vector = { x:b.x-a.x, y:b.y-a.y };
+        const previousVector = this.gesture.pinchVector || vector;
+        const deltaX = Math.abs(vector.x) - Math.abs(previousVector.x);
+        const deltaY = Math.abs(vector.y) - Math.abs(previousVector.y);
+        const ax = Math.abs(deltaX);
+        const ay = Math.abs(deltaY);
+        const dominant = Math.max(ax, ay);
+        const diagonal = dominant >= 1.5 && Math.min(ax, ay) >= dominant * 0.35;
+        const horizontalPinch = !diagonal && ax >= 1.5 && ax > ay * 1.35;
+        const verticalPinch = !diagonal && ay >= 1.5 && ay > ax * 1.35;
 
         if (horizontalPinch) {
           this.viewport.zoomX(factor, xAnchor);
@@ -135,10 +145,10 @@ export class InteractionManager {
         } else if (verticalPinch) {
           if (Number.isFinite(yAnchor)) this.viewport.zoomY(factor, yAnchor);
           this.gesture.type = 'pinch-y';
-        } else {
-          if (dx >= 12) this.viewport.zoomX(factor, xAnchor);
-          if (dy >= 12 && Number.isFinite(yAnchor)) this.viewport.zoomY(factor, yAnchor);
-          this.gesture.type = 'pinch';
+        } else if (diagonal) {
+          this.viewport.zoomX(factor, xAnchor);
+          if (Number.isFinite(yAnchor)) this.viewport.zoomY(factor, yAnchor);
+          this.gesture.type = 'pinch-xy';
         }
       } else {
         const lastCenter = this.gesture.pinchCenter || center;
@@ -173,14 +183,19 @@ export class InteractionManager {
       const anchor = this.viewport.priceAtYRatio(ratio);
       this.viewport.zoomY(Math.exp(-dy / 220), anchor);
     } else if (!this.gesture.type && (Math.abs(dx)>=6 || Math.abs(dy)>=6)) {
-      this.gesture.type = Math.abs(dx)>=Math.abs(dy) ? 'pan-x' : 'pan-y';
+      const ax = Math.abs(dx);
+      const ay = Math.abs(dy);
+      const dominant = Math.max(ax, ay);
+      const diagonal = Math.min(ax, ay) >= dominant * 0.35;
+      this.gesture.type = diagonal ? 'pan-xy' : (ax >= ay ? 'pan-x' : 'pan-y');
     }
 
-    if (this.gesture.type === 'pan-x') {
+    if (this.gesture.type === 'pan-x' || this.gesture.type === 'pan-xy') {
       const current = this.viewport.getState();
       const plotWidth = Math.max(1, rect.width-this.plot.left-this.plot.right);
       this.viewport.panX(-(dx/plotWidth)*(current.x.max-current.x.min));
-    } else if (this.gesture.type === 'pan-y') {
+    }
+    if (this.gesture.type === 'pan-y' || this.gesture.type === 'pan-xy') {
       const plotHeight = Math.max(1, rect.height-this.plot.top-this.plot.bottom);
       this.viewport.panYByPixels(dy, plotHeight);
     }
@@ -209,6 +224,7 @@ export class InteractionManager {
       this.gesture.last = [...this.pointers.values()][0];
       this.gesture.pinchDistance = null;
       this.gesture.pinchCenter = null;
+      this.gesture.pinchVector = null;
     }
   }
 
