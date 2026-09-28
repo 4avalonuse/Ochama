@@ -198,7 +198,7 @@ export function createDrawingInteraction({
     const pointCount = Math.max(2, Number(descriptor?.pointCount) || 2);
 
     const point = pointFromEvent(event, canvas);
-    const transform = createTransform(viewport, canvas);
+    const transform = createTransform(viewport, canvas, getPlot);
     const end = transform.screenToMarket(point);
 
     if (activeTool === 'channel' && channelInteraction.end(end)) {
