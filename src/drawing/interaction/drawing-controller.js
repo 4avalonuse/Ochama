@@ -9,7 +9,7 @@ function pointFromEvent(event, canvas) {
   return { x: event.clientX - rect.left, y: event.clientY - rect.top };
 }
 
-function createTransform(viewport, canvas) {
+function createTransform(viewport, canvas, getPlot = null) {
   const plot = getPlot?.() || createPlotGeometry(canvas.clientWidth, canvas.clientHeight);
   return createDrawingTransform({ viewport, plot });
 }
@@ -57,7 +57,8 @@ export function createDrawingInteraction({
     draw,
     drawSelection,
     getTextEditor: () => requestText,
-    onChanged
+    onChanged,
+    getPlot
   });
 
   function setTool(type) {
@@ -73,7 +74,7 @@ export function createDrawingInteraction({
 
   function drawingDown(event) {
     const point = pointFromEvent(event, canvas);
-    const transform = createTransform(viewport, canvas);
+    const transform = createTransform(viewport, canvas, getPlot);
     const market = transform.screenToMarket(point);
     if (!market) return;
 
