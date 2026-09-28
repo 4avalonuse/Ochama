@@ -155,7 +155,7 @@ export function createDrawingInteraction({
 
   function drawingMove(event) {
     const point = pointFromEvent(event, canvas);
-    const transform = createTransform(viewport, canvas);
+    const transform = createTransform(viewport, canvas, getPlot);
     const market = transform.screenToMarket(point);
     if (!market) return;
 
