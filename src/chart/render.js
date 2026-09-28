@@ -129,6 +129,12 @@ function drawGrid(ctx, width, height, plot, yMin, yMax, scaleType, xMin, xMax) {
     }
     ctx.restore();
 
+    const zoomPhase = Math.log10(Math.max(1, xSpan)) * 37.5;
+    const hue = ((zoomPhase % 28) + 28) % 28 + 205;
+    const paddingX = 5;
+    const labelHeight = 17;
+    const candidates = [];
+
     for (let i = 0; i <= 6; i += 1) {
       const ratio = i / 6;
       const x = plot.left + plot.width * ratio;
@@ -136,31 +142,58 @@ function drawGrid(ctx, width, height, plot, yMin, yMax, scaleType, xMin, xMax) {
       const label = formatDateLabel(timestamp, xSpan);
       if (!label) continue;
 
-      ctx.beginPath();
-      ctx.moveTo(x, axisY);
-      ctx.lineTo(x, axisY + 4);
-      ctx.stroke();
-
-      ctx.textAlign = i === 0 ? 'left' : i === 6 ? 'right' : 'center';
-
-      const zoomPhase = Math.log10(Math.max(1, xSpan)) * 37.5;
-      const hue = ((zoomPhase % 28) + 28) % 28 + 205;
-      const paddingX = 5;
+      ctx.textAlign = 'center';
       const metrics = ctx.measureText(label);
       const labelWidth = metrics.width + paddingX * 2;
-      const labelHeight = 17;
       let labelLeft = x - labelWidth / 2;
       if (i === 0) labelLeft = x;
       if (i === 6) labelLeft = x - labelWidth;
 
+      candidates.push({ i, x, label, labelLeft, labelWidth });
+    }
+
+    // Evita sobreposição: em janelas de 1 minuto os textos ficam longos
+    // e o eixo passa a mostrar apenas o que cabe de verdade.
+    const selected = [];
+    const gap = 8;
+    candidates.forEach(candidate => {
+      const right = candidate.labelLeft + candidate.labelWidth;
+      const previous = selected.at(-1);
+      if (previous && candidate.labelLeft < previous.right + gap) return;
+      selected.push({ ...candidate, right });
+    });
+
+    // Mantém as extremidades legíveis quando existe espaço para elas.
+    if (candidates.length && selected.length === 1 && candidates.length > 1) {
+      const last = candidates.at(-1);
+      const lastRight = last.labelLeft + last.labelWidth;
+      if (last.labelLeft >= selected[0].right + gap || selected[0].i === 0) {
+        selected.push({ ...last, right:lastRight });
+      }
+    }
+
+    candidates.forEach(({ x }) => {
+      ctx.beginPath();
+      ctx.moveTo(x, axisY);
+      ctx.lineTo(x, axisY + 4);
+      ctx.stroke();
+    });
+
+    selected.forEach(({ i, x, label, labelLeft, labelWidth }) => {
+      ctx.textAlign = i === 0 ? 'left' : i === 6 ? 'right' : 'center';
+
       ctx.fillStyle = `hsla(${hue}, 32%, 28%, .62)`;
       ctx.beginPath();
-      ctx.roundRect(labelLeft, axisY + 4, labelWidth, labelHeight, 5);
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(labelLeft, axisY + 4, labelWidth, labelHeight, 5);
+      } else {
+        ctx.rect(labelLeft, axisY + 4, labelWidth, labelHeight);
+      }
       ctx.fill();
 
       ctx.fillStyle = '#9aa6b5';
       ctx.fillText(label, x, axisY + 7);
-    }
+    });
   }
 
   ctx.restore();
