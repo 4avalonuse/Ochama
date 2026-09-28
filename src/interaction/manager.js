@@ -126,9 +126,20 @@ export class InteractionManager {
         const yAnchor = this.viewport.priceAtYRatio(yRatio);
         const dx = Math.abs(b.x-a.x);
         const dy = Math.abs(b.y-a.y);
-        if (dx >= 12) this.viewport.zoomX(factor, xAnchor);
-        if (dy >= 12 && Number.isFinite(yAnchor)) this.viewport.zoomY(factor, yAnchor);
-        this.gesture.type = 'pinch';
+        const horizontalPinch = dx >= 12 && dx > dy * 1.25;
+        const verticalPinch = dy >= 12 && dy > dx * 1.25;
+
+        if (horizontalPinch) {
+          this.viewport.zoomX(factor, xAnchor);
+          this.gesture.type = 'pinch-x';
+        } else if (verticalPinch) {
+          if (Number.isFinite(yAnchor)) this.viewport.zoomY(factor, yAnchor);
+          this.gesture.type = 'pinch-y';
+        } else {
+          if (dx >= 12) this.viewport.zoomX(factor, xAnchor);
+          if (dy >= 12 && Number.isFinite(yAnchor)) this.viewport.zoomY(factor, yAnchor);
+          this.gesture.type = 'pinch';
+        }
       } else {
         const lastCenter = this.gesture.pinchCenter || center;
         const dx = center.x-lastCenter.x;
