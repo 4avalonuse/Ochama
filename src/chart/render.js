@@ -1,5 +1,6 @@
 import { normalizeScaleType, toScaleValue, fromScaleValue } from '../viewport/scale.js';
 import { createPlotGeometry } from './plot-geometry.js';
+import { createCandleTooltip } from './candle-tooltip.js';
 import { createDrawingTransform } from '../drawing/render/transform.js';
 import { createDrawingRenderer } from '../drawing/render/drawing-renderer.js';
 import { listStudies } from '../studies/study-registry.js';
@@ -323,6 +324,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
   let paneRatio = 0.25;
   let paneControls = null;
   let paneDragCleanup = null;
+  let candleTooltipCleanup = null;
 
   function resize() {
     const rect = host.getBoundingClientRect();
@@ -475,6 +477,13 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
 
   const observer = new ResizeObserver(resize);
   observer.observe(host);
+  candleTooltipCleanup = createCandleTooltip({
+    host,
+    canvas,
+    candles,
+    viewport,
+    getPlot: getDrawingPlot
+  });
   resize();
 
   return {
@@ -492,6 +501,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     },
     destroy() {
       paneDragCleanup?.();
+      candleTooltipCleanup?.();
       paneControls?.remove();
       observer.disconnect();
       canvas.remove();
